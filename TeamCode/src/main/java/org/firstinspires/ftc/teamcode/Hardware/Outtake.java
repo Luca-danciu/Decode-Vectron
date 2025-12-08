@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -21,9 +23,16 @@ public class Outtake {
         turetaMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         turetaMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         turetaMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        turetaMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+    public void TuretaAngle(int ticks){
+        turetaMotor.setTargetPosition(ticks);
+        turetaMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        turetaMotor.setPower(1);
+
     }
     public void Charge(){
-        Launcher.setPower(-1);
+        Launcher.setPower(-0.77);
     }
     public void StopLauncher(){
         Launcher.setPower(0);

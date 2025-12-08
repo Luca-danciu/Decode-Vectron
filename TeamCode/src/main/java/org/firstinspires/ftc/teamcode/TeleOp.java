@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -20,7 +21,7 @@ import org.firstinspires.ftc.teamcode.Hardware.WebcamTureta;
 
 public class TeleOp extends LinearOpMode {
 
-//Motoare/Componente
+    //Motoare/Componente
     public DcMotor FrontLeft;
     public DcMotor FrontRight;
     public DcMotor RearLeft;
@@ -36,7 +37,7 @@ public class TeleOp extends LinearOpMode {
     public IMUIndexer imuIndexer = new IMUIndexer();
     public ColorSensorIndexer colorSensorIndexer = new ColorSensorIndexer();
 
-//Valori
+    //Valori
     double heading = 0;
     double initialHeading = 0;
     public double distance;
@@ -47,16 +48,16 @@ public class TeleOp extends LinearOpMode {
     double TICKS_PER_DEGREE = (TICKS_PER_REV * GEAR_RATIO) / 360.0;
     double turetaHeadingFix = 0;
 
-//Verificari
+    //Verificari
     boolean ballsRemoved = false;
     boolean detectionActive = true;
-    boolean allBallsIn  = false;
+    boolean allBallsIn = false;
     boolean newCaseDetected = false;
     boolean urmarireActivata = false;
     boolean colectareSelectiva = false;
     boolean stopIntake = false;
 
-//Stringuri
+    //Stringuri
     String detectedCase = "NONE";
     public String pp1 = "PickPose1";
     public String pp2 = "PickPose2";
@@ -64,11 +65,26 @@ public class TeleOp extends LinearOpMode {
     String greenBallPickedAt = "Nicio bila verde preluata";
     ColorSensorIndexer.DetectedColor detectedColor1, detectedColor2, detectedColor3;
 
-//PIDF
-    public static double p = 0.01, i = 0.001, d = 0.000012, f = 0.00000006;
-    public static int target = 5000;
-    public final double ticks_in_degree = 1.493;
-    double power = 0;
+    //Set RPM Launcher
+    private static final double CPR = 18.666;
+    public static double kP = 0.005;
+    public static double kI = 0.000007;
+    public static double kD = 0.0001;
+    public static double kF = 0.0001468;
+
+    private double integral = 0;
+    private double previousError = 0;
+
+    private ElapsedTime timer = new ElapsedTime();
+    private ElapsedTime timerToSee = new ElapsedTime();
+    double Time = 0;
+    private double dt = 0.02;
+
+    private int lastEncoder = 0;
+    public static double targetRPM1 = 0;
+    public static double targetRPM = 0;
+    double measuredRPM;
+    public static double pidTargetRPM = 0;
 
     public void runOpMode() throws InterruptedException {
 
@@ -86,9 +102,10 @@ public class TeleOp extends LinearOpMode {
         FrontLeft = hardwareMap.get(DcMotor.class, "FL");
         distanceSensor = hardwareMap.get(DistanceSensor.class, "SenzorIntakeCH");
         launcher = hardwareMap.get(DcMotor.class, "Launcher");
-        launcher.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        launcher.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        PIDController controller = new PIDController(p, i, d);
+        launcher.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        launcher.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        launcher.setDirection(DcMotorEx.Direction.REVERSE);
+        launcher.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         colorSensorIndexer.initcolorsensor(hardwareMap);
         indexer.indexerinit(hardwareMap);
         outtake.outtakeinit(hardwareMap);
@@ -110,7 +127,8 @@ public class TeleOp extends LinearOpMode {
         RearRight.setDirection(DcMotorSimple.Direction.REVERSE);
         FrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
-
+        timer.reset();
+        timerToSee.reset();
         waitForStart();
 
         initialHeading = imuIndexer.getHeading(AngleUnit.DEGREES);
@@ -134,540 +152,622 @@ public class TeleOp extends LinearOpMode {
             String tag = webcamTureta.detectTag();
             double dist = webcamTureta.getDistanceMeters();
 
-            int liftPos = launcher.getCurrentPosition();
-            double pid0 = controller.calculate(liftPos, target);
-            double ff0 = Math.cos(Math.toRadians(target / ticks_in_degree)) * f;
+//RPM set for launcher
+            pidTargetRPM = Math.max(0, Math.min(12000, pidTargetRPM));
+            if (pidTargetRPM <= 50) {
+                launcher.setPower(0);
+                integral = 0;
+                previousError = 0;
+            }else {
+                double currentTime = timer.seconds();
 
-            launcher.setPower(power);
+                if (currentTime >= dt) {
 
-            if (detectionActive) {
-                tag = webcamTureta.detectTag();
-                if (tag != null && (tag.equals("GPP") || tag.equals("PGP") || tag.equals("PPG"))) {
-                    detectedCase = tag;
-                    gamepad1.rumble(1000);
-                    newCaseDetected = true;
+                    int currentEncoder = launcher.getCurrentPosition();
+                    int delta = currentEncoder - lastEncoder;
+
+                    measuredRPM = (delta * 60.0) / (CPR * currentTime);
+
+                    double error = pidTargetRPM - measuredRPM;
+
+                    if (Math.abs(error) < 40) error = 0;
+
+                    integral += error * currentTime;
+                    integral = Math.max(-5000, Math.min(5000, integral));
+
+                    double derivative = (error - previousError) / Math.max(currentTime, 0.01);
+
+                    double output =
+                            kP * error +
+                                    kI * integral +
+                                    kD * derivative +
+                                    kF * targetRPM;
+
+                    output = Math.max(0.0, Math.min(1.0, output));
+
+                    launcher.setPower(output);
+
+                    previousError = error;
+                    lastEncoder = currentEncoder;
+                    timer.reset();
+
                 }
             }
 
-            if (dist > 1.70 && dist < 2.5) {outtake.AngleMax();
-            } else if (dist < 1.70 && dist > 1.50) {outtake.Angle.setPosition(0.65);
-            } else if (dist < 1.50 && dist > 1.00) {outtake.Angle.setPosition(0.5);
-            } else if (dist < 1){outtake.AngleMin();}
+                if (detectionActive) {
+                    tag = webcamTureta.detectTag();
+                    if (tag != null && (tag.equals("GPP") || tag.equals("PGP") || tag.equals("PPG"))) {
+                        detectedCase = tag;
+                        gamepad1.rumble(1000);
+                        newCaseDetected = true;
+                    }
+                }
+
+                if (dist > 1.70 && dist < 2.5) {
+                    outtake.AngleMax();
+                } else if (dist < 1.70 && dist > 1.50) {
+                    outtake.Angle.setPosition(0.65);
+                } else if (dist < 1.50 && dist > 1.00) {
+                    outtake.Angle.setPosition(0.5);
+                } else if (dist < 1) {
+                    outtake.AngleMin();
+                }
 
 
 //power / dist
-            if (dist < 1.25){
-                pid = -0.7;
-                ff = 0;
-            }else if (dist > 1.25 && dist < 1.50){
-                pid = -0.75;
-                ff = 0;
-            }else if (dist > 1.50 && dist < 1.70){
-                pid = -0.8;
-                ff = 0;
-            }else if (dist >1.70 && dist < 1.85){
-                pid = -0.8;
-                ff = 0;
-            } else if (dist > 1.85 && dist < 2.5) {
-                pid = -0.9;
-                ff = 0;
-            }else if (dist > 2.5){
-                outtake.Angle.setPosition(0.73);
-                pid = pid0;
-                ff = ff0;
-            }
+//                if (dist < 1.25) {
+//                    targetRPM1 = 4200;
+//                    pidTargetRPM = 4
+//                    resetPID();
+//                } else if (dist > 1.25 && dist < 1.50) {
+//                    targetRPM1= 4500;
+//                    resetPID();
+                if (dist < 1.70) {
+                    targetRPM1= 4700;
+                    resetPID();
+                } else if (dist > 1.70 && dist < 1.85) {
+                    targetRPM1 = 5500;
+                    resetPID();
+                } else if (dist > 1.85 && dist < 2.5) {
+                    targetRPM1 = 5500;
+                    resetPID();
+                } else if (dist > 2.5) {
+                    outtake.Angle.setPosition(0.78);
+//                    outtake.AngleMax();
+                    targetRPM1 = 6000;
+                    resetPID();
+                }
 
 
 //Porneste detectarea
-            if (gamepad1.right_bumper) {
-                detectionActive = true;
-                webcamTureta.startDetection();
-            }
+                if (gamepad1.right_bumper) {
+                    detectionActive = true;
+                    webcamTureta.startDetection();
+                }
 //Opreste detectarea
-            else {
-                detectionActive = false;
-                webcamTureta.stopDetection();
-            }
+                else {
+                    detectionActive = false;
+                    webcamTureta.stopDetection();
+                }
 
 
 //Aruncare
-            switch (stateThrow) {
-                // ----------------- PRIMA BILA -----------------
-                case 0:
-                    if (gamepad1.triangle && allBallsIn) {
-                        stopIntake = false;
-                        power = pid + ff;
-                        if(!colectareSelectiva){
-                            throwTimer.reset();
-                            stateThrow = 1;
-                        } else{
-                            if (greenBallPickedAt.equals(pp1)) {
-                                String caseUsed = detectedCase;
-                                switch (caseUsed) {
-                                    case "GPP":
-                                        indexer.OuttakePose2();
-                                        break;
-                                    case "PGP":
-                                        indexer.OuttakePose3();
-                                        break;
-                                    case "PPG":
-                                        indexer.OuttakePose3();
-                                        break;
-                                    default:
-                                        indexer.OuttakePose1();
-                                        break;
-                                }
+                switch (stateThrow) {
+                    // ----------------- PRIMA BILA -----------------
+                    case 0:
+                        if (gamepad1.triangle && allBallsIn) {
+                            timerToSee.reset();
+                            stopIntake = false;
+                            targetRPM = targetRPM1;
+                            if (targetRPM == 6000){
+                                pidTargetRPM = 12000;
+                            }else {
+                                pidTargetRPM = targetRPM;
                             }
-                            if (greenBallPickedAt.equals(pp2)) {
-                                String caseUsed = detectedCase;
+                            if (!colectareSelectiva) {
+                                indexer.OuttakePose1();
+                                throwTimer.reset();
+                                stateThrow = 1;
+                            } else {
+                                if (greenBallPickedAt.equals(pp1)) {
+                                    String caseUsed = detectedCase;
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose1();
+                                            break;
+                                    }
+                                }
+                                if (greenBallPickedAt.equals(pp2)) {
+                                    String caseUsed = detectedCase;
 
-                                switch (caseUsed) {
-                                    case "GPP":
-                                        indexer.OuttakePose3();
-                                        break;
-                                    case "PGP":
-                                        indexer.OuttakePose2();
-                                        break;
-                                    case "PPG":
-                                        indexer.OuttakePose2();
-                                        break;
-                                    default:
-                                        indexer.OuttakePose1();
-                                        break;
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose1();
+                                            break;
+                                    }
                                 }
-                            }
-                            if (greenBallPickedAt.equals(pp3)) {
-                                String caseUsed = detectedCase;
+                                if (greenBallPickedAt.equals(pp3)) {
+                                    String caseUsed = detectedCase;
 
-                                switch (caseUsed) {
-                                    case "GPP":
-                                        indexer.OuttakePose1();
-                                        break;
-                                    case "PGP":
-                                        indexer.OuttakePose2();
-                                        break;
-                                    case "PPG":
-                                        indexer.OuttakePose2();
-                                        break;
-                                    default:
-                                        indexer.OuttakePose1();
-                                        break;
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose1();
+                                            break;
+                                    }
                                 }
+                                throwTimer.reset();
+                                stateThrow = 1;
                             }
-                            throwTimer.reset();
-                            stateThrow = 1;
                         }
-                    }
-                    break;
+                        break;
 
-                case 1:
-                    if (throwTimer.milliseconds() > 1300) {
-                        indexer.Push();
-                        throwTimer.reset();
-                        stateThrow = 2;
-                    }
-                    break;
-
-                case 2:
-                    if (throwTimer.milliseconds() > 500) {
-                        indexer.Down();
-                        power = pid + ff;
-                        throwTimer.reset();
-                        stateThrow = 3;
-                    }
-                    break;
-
-                // ----------------- A DOUA BILA -----------------
-                case 3:
-                    if (throwTimer.milliseconds() > 300) {
-                        if (!colectareSelectiva){
-                            indexer.OuttakePose2();
-                            throwTimer.reset();
-                            stateThrow = 4;
+                    case 1:
+                        if (pidTargetRPM == 12000){
+                            if (measuredRPM > (targetRPM + 500)&& throwTimer.milliseconds() > 300) {
+                                indexer.Push();
+                                throwTimer.reset();
+                                stateThrow = 2;
+                            }
                         }else {
-                            if (greenBallPickedAt.equals(pp1)) {
-                                String caseUsed = detectedCase;
-
-                                switch (caseUsed) {
-                                    case "GPP":
-                                        indexer.OuttakePose3();
-                                        break;
-                                    case "PGP":
-                                        indexer.OuttakePose2();
-                                        break;
-                                    case "PPG":
-                                        indexer.OuttakePose1();
-                                        break;
-                                    default:
-                                        indexer.OuttakePose2();
-                                        break;
-                                }
+                            if ((measuredRPM < (targetRPM + 200) && measuredRPM > (targetRPM - 200) && throwTimer.milliseconds() > 200)) {
+                                indexer.Push();
+                                throwTimer.reset();
+                                stateThrow = 2;
                             }
-                            if (greenBallPickedAt.equals(pp2)) {
-                                String caseUsed = detectedCase;
+                        }
+                        break;
 
-                                switch (caseUsed) {
-                                    case "GPP":
-                                        indexer.OuttakePose2();
-                                        break;
-                                    case "PGP":
-                                        indexer.OuttakePose3();
-                                        break;
-                                    case "PPG":
-                                        indexer.OuttakePose1();
-                                        break;
-                                    default:
-                                        indexer.OuttakePose2();
-                                        break;
-                                }
-                            }
-                            if (greenBallPickedAt.equals(pp3)) {
-                                String caseUsed = detectedCase;
-
-                                switch (caseUsed) {
-                                    case "GPP":
-                                        indexer.OuttakePose2();
-                                        break;
-                                    case "PGP":
-                                        indexer.OuttakePose1();
-                                        break;
-                                    case "PPG":
-                                        indexer.OuttakePose3();
-                                        break;
-                                    default:
-                                        indexer.OuttakePose2();
-                                        break;
-                                }
-                            }
+                    case 2:
+                        if (throwTimer.milliseconds() > 500) {
+                            indexer.Down();
                             throwTimer.reset();
-                            stateThrow = 4;
+                            stateThrow = 3;
                         }
+                        break;
+
+                    // ----------------- A DOUA BILA -----------------
+                    case 3:
+                        if (throwTimer.milliseconds() > 300) {
+                            if (!colectareSelectiva) {
+                                indexer.OuttakePose2();
+                                throwTimer.reset();
+                                stateThrow = 4;
+                            } else {
+                                if (greenBallPickedAt.equals(pp1)) {
+                                    String caseUsed = detectedCase;
+
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose2();
+                                            break;
+                                    }
+                                }
+                                if (greenBallPickedAt.equals(pp2)) {
+                                    String caseUsed = detectedCase;
+
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose2();
+                                            break;
+                                    }
+                                }
+                                if (greenBallPickedAt.equals(pp3)) {
+                                    String caseUsed = detectedCase;
+
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose2();
+                                            break;
+                                    }
+                                }
+                                throwTimer.reset();
+                                stateThrow = 4;
+                            }
 
 
-                    }
-                    break;
+                        }
+                        break;
 
-                case 4:
-                    if (throwTimer.milliseconds() > 700) {
-                        indexer.Push();
-                        throwTimer.reset();
-                        stateThrow = 5;
-                    }
-                    break;
+                    case 4:
+                        if (pidTargetRPM == 12000){
+                            if (measuredRPM > (targetRPM + 500)&& throwTimer.milliseconds() > 500) {
+                                indexer.Push();
+                                throwTimer.reset();
+                                stateThrow = 5;
+                            }
+                        }else {
+                            if ((measuredRPM < (targetRPM + 200) && measuredRPM > (targetRPM - 200) && throwTimer.milliseconds() > 400)) {
+                                indexer.Push();
+                                throwTimer.reset();
+                                stateThrow = 5;
+                            }
+                        }
+                        break;
 
-                case 5:
-                    if (throwTimer.milliseconds() > 300) {
-                        indexer.Down();
-                        power = pid + ff;
-                        throwTimer.reset();
-                        stateThrow = 6;
-                    }
-                    break;
-
-                // ----------------- A TREIA BILA -----------------
-                case 6:
-                    if (throwTimer.milliseconds() > 600) {
-                        if (!colectareSelectiva){
-                            indexer.OuttakePose3();
+                    case 5:
+                        if (throwTimer.milliseconds() > 300) {
+                            indexer.Down();
                             throwTimer.reset();
-                            stateThrow = 7;
-                        }else{
-                        if (greenBallPickedAt.equals(pp1)) {
-                            String caseUsed = detectedCase;
+                            stateThrow = 6;
+                        }
+                        break;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose2();
-                                    break;
-                                default:
-                                    indexer.OuttakePose3();
-                                    break;
+                    // ----------------- A TREIA BILA -----------------
+                    case 6:
+                        if (throwTimer.milliseconds() > 600) {
+                            if (!colectareSelectiva) {
+                                indexer.OuttakePose3();
+                                throwTimer.reset();
+                                stateThrow = 7;
+                            } else {
+                                if (greenBallPickedAt.equals(pp1)) {
+                                    String caseUsed = detectedCase;
+
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose2();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose3();
+                                            break;
+                                    }
+                                }
+                                if (greenBallPickedAt.equals(pp2)) {
+                                    String caseUsed = detectedCase;
+
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose3();
+                                            break;
+                                    }
+                                }
+                                if (greenBallPickedAt.equals(pp3)) {
+                                    String caseUsed = detectedCase;
+
+                                    switch (caseUsed) {
+                                        case "GPP":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        case "PGP":
+                                            indexer.OuttakePose3();
+                                            break;
+                                        case "PPG":
+                                            indexer.OuttakePose1();
+                                            break;
+                                        default:
+                                            indexer.OuttakePose3();
+                                            break;
+                                    }
+                                }
+                                throwTimer.reset();
+                                stateThrow = 7;
+                            }
+
+                        }
+                        break;
+
+                    case 7:
+                        if (pidTargetRPM == 12000){
+                            if (measuredRPM > (targetRPM + 500)&& throwTimer.milliseconds() > 500) {
+                                indexer.Push();
+                                throwTimer.reset();
+                                stateThrow = 8;
+                            }
+                        }else {
+                            if ((measuredRPM < (targetRPM + 200) && measuredRPM > (targetRPM - 200) && throwTimer.milliseconds() > 400)) {
+                                indexer.Push();
+                                throwTimer.reset();
+                                stateThrow = 8;
                             }
                         }
-                        if (greenBallPickedAt.equals(pp2)) {
-                            String caseUsed = detectedCase;
+                        break;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose3();
-                                    break;
-                                default:
-                                    indexer.OuttakePose3();
-                                    break;
+                    case 8:
+                        if (throwTimer.milliseconds() > 500) {
+                            if (colectareSelectiva) {
+                                stateCollect = 96;
+                            } else {
+                                stateCollect = 0;
                             }
+                            indexer.Down();
+                            purplecount = 0;
+                            greencount = 0;
+                            stopIntake = false;
+                            allBallsIn = false;
+                            pidTargetRPM = 0;
+                            stateThrow = 0;
+                            Time = timerToSee.seconds();
+                            greenBallPickedAt = "Nicio bila verde preluata";
                         }
-                        if (greenBallPickedAt.equals(pp3)) {
-                            String caseUsed = detectedCase;
-
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose1();
-                                    break;
-                                default:
-                                    indexer.OuttakePose3();
-                                    break;
-                            }
-                        }
-                            throwTimer.reset();
-                            stateThrow = 7;
-                        }
-
-                    }
-                    break;
-
-                case 7:
-                    if (throwTimer.milliseconds() > 300) {
-                        indexer.Push(); // aruncă a treia bilă
-                        throwTimer.reset();
-                        stateThrow = 8;
-                    }
-                    break;
-
-                case 8:
-                    if (throwTimer.milliseconds() > 500) {
-                        if (colectareSelectiva){
-                            stateCollect = 96;
-                        }else{
-                            stateCollect = 0;
-                        }
-                        power = 0;
-                        indexer.Down();
-                        purplecount = 0;
-                        greencount = 0;
-                        stopIntake = false;
-                        allBallsIn = false;
-                        stateThrow = 0;
-                        greenBallPickedAt = "Nicio bila verde preluata";
-                    }
-                    break;
-            }
+                        break;
+                }
 
 //Colectare
-            switch (stateCollect) {
-                case 0: // PickPose1
-                    indexer.PickPose1();
-                    if (distance <= 60) {
-                        indexer.PickPose2();
-                        collecttimer.reset();
-                        ballsRemoved = false;
-                        stateCollect = 1;
+                switch (stateCollect) {
+                    case 0: // PickPose1
+                        indexer.PickPose1();
+                        if (distance <= 60) {
+                            indexer.PickPose2();
+                            collecttimer.reset();
+                            ballsRemoved = false;
+                            stateCollect = 1;
 
-                    }
-
-            break;
-
-            case 1:
-                if (distance <= 60 && collecttimer.milliseconds() > 600) {
-                    indexer.PickPose3();
-                    collecttimer.reset();
-                    stateCollect = 2;
-                }
-                break;
-
-            case 2: // PickPose3
-                if (distance <= 60 && collecttimer.milliseconds() > 300) {
-                    collecttimer.reset();
-                    indexer.OuttakePose1();
-                    allBallsIn = true;
-                    stopIntake = true;
-                    stateCollect = 3;
-                }
-
-                break;
-
-            case 3:
-                if (ballsRemoved) {
-                    collecttimer.reset();
-                    stopIntake = false;
-                    allBallsIn = false;
-                    stateCollect = 0;
-                }
-                break;
-
-            case 96:
-                indexer.KeepInside();
-                indexer.PickPose1();
-                detectedColor1 = colorSensorIndexer.getDetectedColor();
-                if (distance <= 60) {
-                    if (detectedColor1 == ColorSensorIndexer.DetectedColor.PURPLE) {
-                        purplecount++;
-                        indexer.PickPose2();
-                        collecttimer.reset();
-                        ballsRemoved = false;
-                        detectedColor1 = ColorSensorIndexer.DetectedColor.UNKNOWN;
-                        stateCollect = 97;
-                    } else if (detectedColor1 == ColorSensorIndexer.DetectedColor.GREEN) {
-                        greencount++;
-                        if (greencount == 1) {
-                            greenBallPickedAt = "PickPose1";
                         }
-                        indexer.PickPose2();
-                        collecttimer.reset();
-                        ballsRemoved = false;
-                        stateCollect = 97;
-                    }
-                }
-            break;
 
-            case 97: // PickPose2
-                detectedColor2 = colorSensorIndexer.getDetectedColor();
-                if (distance <= 60 && collecttimer.milliseconds() > 600) {
-                    if (detectedColor2 == ColorSensorIndexer.DetectedColor.PURPLE) {
-                        purplecount++;
-                        collecttimer.reset();
-                        indexer.PickPose3();
-                        stateCollect = 98;
-                    } else if (detectedColor2 == ColorSensorIndexer.DetectedColor.GREEN) {
-                        greencount++;
-                        if (greencount == 1) {
-                            greenBallPickedAt = "PickPose2";
-                        }
-                        collecttimer.reset();
-                        if (greencount == 1) {
+                        break;
+
+                    case 1:
+                        if (distance <= 60 && collecttimer.milliseconds() > 600) {
                             indexer.PickPose3();
-                            stateCollect = 98;
-                        } else if (greencount > 1) {
-                            TakeGreenBallOut.reset();
+                            collecttimer.reset();
+                            stateCollect = 2;
                         }
-                    }
-                }
-            break;
+                        break;
 
-            case 98: // PickPose3
-                detectedColor3 = colorSensorIndexer.getDetectedColor();
-                if (distance <= 60 && collecttimer.milliseconds() > 300) {
-                    if (detectedColor3 == ColorSensorIndexer.DetectedColor.PURPLE) {
-                        purplecount++;
-                        collecttimer.reset();
-                        if (purplecount > 2) {
-                            TakePurpleBallOut.reset();
+                    case 2: // PickPose3
+                        if (distance <= 60 && collecttimer.milliseconds() > 300) {
+                            collecttimer.reset();
+                            indexer.OuttakePose1();
+                            allBallsIn = true;
+                            stopIntake = true;
+                            stateCollect = 3;
                         }
-                    } else if (detectedColor3 == ColorSensorIndexer.DetectedColor.GREEN) {
-                        greencount++;
-                        if (greencount == 1) {
-                            greenBallPickedAt = "PickPose3";
-                        }
-                        collecttimer.reset();
-                        if (greencount > 1) {
-                            TakeGreenBallOut.reset();
-                        }
-                    }
-                    if (greencount == 1 && purplecount == 2) {
-                        indexer.OuttakePose1();
-                        stopIntake = true;
-                        allBallsIn = true;
-                        stateCollect = 99;
-                    }
-                }
-            break;
 
-            case 99:
-                if (ballsRemoved) {
-                    collecttimer.reset();
-                    allBallsIn = false;
-                    stateCollect = 96;
+                        break;
+
+                    case 3:
+                        if (ballsRemoved) {
+                            collecttimer.reset();
+                            stopIntake = false;
+                            allBallsIn = false;
+                            stateCollect = 0;
+                        }
+                        break;
+
+                    case 96:
+                        indexer.KeepInside();
+                        indexer.PickPose1();
+                        detectedColor1 = colorSensorIndexer.getDetectedColor();
+                        if (distance <= 60) {
+                            if (detectedColor1 == ColorSensorIndexer.DetectedColor.PURPLE) {
+                                purplecount++;
+                                indexer.PickPose2();
+                                collecttimer.reset();
+                                ballsRemoved = false;
+                                detectedColor1 = ColorSensorIndexer.DetectedColor.UNKNOWN;
+                                stateCollect = 97;
+                            } else if (detectedColor1 == ColorSensorIndexer.DetectedColor.GREEN) {
+                                greencount++;
+                                if (greencount == 1) {
+                                    greenBallPickedAt = "PickPose1";
+                                }
+                                indexer.PickPose2();
+                                collecttimer.reset();
+                                ballsRemoved = false;
+                                stateCollect = 97;
+                            }
+                        }
+                        break;
+
+                    case 97: // PickPose2
+                        detectedColor2 = colorSensorIndexer.getDetectedColor();
+                        if (distance <= 60 && collecttimer.milliseconds() > 600) {
+                            if (detectedColor2 == ColorSensorIndexer.DetectedColor.PURPLE) {
+                                purplecount++;
+                                collecttimer.reset();
+                                indexer.PickPose3();
+                                stateCollect = 98;
+                            } else if (detectedColor2 == ColorSensorIndexer.DetectedColor.GREEN) {
+                                greencount++;
+                                if (greencount == 1) {
+                                    greenBallPickedAt = "PickPose2";
+                                }
+                                collecttimer.reset();
+                                if (greencount == 1) {
+                                    indexer.PickPose3();
+                                    stateCollect = 98;
+                                } else if (greencount > 1) {
+                                    TakeGreenBallOut.reset();
+                                }
+                            }
+                        }
+                        break;
+
+                    case 98: // PickPose3
+                        detectedColor3 = colorSensorIndexer.getDetectedColor();
+                        if (distance <= 60 && collecttimer.milliseconds() > 300) {
+                            if (detectedColor3 == ColorSensorIndexer.DetectedColor.PURPLE) {
+                                purplecount++;
+                                collecttimer.reset();
+                                if (purplecount > 2) {
+                                    TakePurpleBallOut.reset();
+                                }
+                            } else if (detectedColor3 == ColorSensorIndexer.DetectedColor.GREEN) {
+                                greencount++;
+                                if (greencount == 1) {
+                                    greenBallPickedAt = "PickPose3";
+                                }
+                                collecttimer.reset();
+                                if (greencount > 1) {
+                                    TakeGreenBallOut.reset();
+                                }
+                            }
+                            if (greencount == 1 && purplecount == 2) {
+                                indexer.OuttakePose1();
+                                stopIntake = true;
+                                allBallsIn = true;
+                                stateCollect = 99;
+                            }
+                        }
+                        break;
+
+                    case 99:
+                        if (ballsRemoved) {
+                            collecttimer.reset();
+                            allBallsIn = false;
+                            stateCollect = 96;
+                        }
+                        break;
                 }
-            break;}
+
+                if (gamepad1.share) allBallsIn = true;
 
 
 //Resetare colectarea selectiva
-            if (gamepad1.ps) {
-                stateCollect = 96;
-                colectareSelectiva = true;
-                stopIntake = false;
-                greencount = 0;
-                purplecount = 0;
-                greenBallPickedAt = "Nicio bila verde preluata";
-            }
+                if (gamepad1.ps) {
+                    stateCollect = 96;
+                    colectareSelectiva = true;
+                    stopIntake = false;
+                    greencount = 0;
+                    purplecount = 0;
+                    greenBallPickedAt = "Nicio bila verde preluata";
+                }
 
 //Intake Role
-            if (gamepad1.left_trigger > 0) {
-                indexer.Colect();
-            } else if (gamepad1.right_trigger > 0) {
-                indexer.TakeOut();
-            } else if (TakeGreenBallOut.milliseconds() < 400) {
-                indexer.TakeOut();
-                greencount = 1;
-            } else if (TakePurpleBallOut.milliseconds() < 400) {
-                indexer.TakeOut();
-                purplecount = 2;
-            }else if(stopIntake && collecttimer.milliseconds() > 700){
-                indexer.Stop();
-            }else {
-                indexer.KeepInside();
-            }
+                if (gamepad1.left_trigger > 0) {
+                    indexer.Colect();
+                } else if (gamepad1.right_trigger > 0) {
+                    indexer.TakeOut();
+                } else if (TakeGreenBallOut.milliseconds() < 400) {
+                    indexer.TakeOut();
+                    greencount = 1;
+                } else if (TakePurpleBallOut.milliseconds() < 400) {
+                    indexer.TakeOut();
+                    purplecount = 2;
+                } else if (stopIntake && collecttimer.milliseconds() > 700) {
+                    indexer.Stop();
+                } else {
+                    indexer.KeepInside();
+                }
 
 //Unghi Tureta
-            if (gamepad1.cross) outtake.AngleMin();
-            if (gamepad1.circle) outtake.AngleMax();
+                if (gamepad1.cross) outtake.AngleMin();
+                if (gamepad1.circle) outtake.AngleMax();
 
-            if(gamepad1.options) {
-                stateCollect = 0;
-                stopIntake = false;
-            }
-
-            heading = imuIndexer.getHeading(AngleUnit.DEGREES);
-            double headingDifference = heading - initialHeading;
-
-            if (gamepad1.dpad_left) {
-                webcamTureta.startDetection();
-                String tagName = webcamTureta.detectTag();
-
-                if (tagName.equals("Blue Tower")) {
-                    urmarireActivata = true;
-                    turetaHeadingFix = imuIndexer.getHeading(AngleUnit.DEGREES);
+                if (gamepad1.options) {
+                    stateCollect = 0;
+                    stopIntake = false;
                 }
-            }
 
-            if (gamepad1.dpad_right) {
-                urmarireActivata = false;
-                webcamTureta.stopDetection();
-                outtake.turetaMotor.setTargetPosition(0);
-                outtake.turetaMotor.setPower(1);
-            }
+                heading = imuIndexer.getHeading(AngleUnit.DEGREES);
+                double headingDifference = heading - initialHeading;
 
+                if (gamepad1.dpad_left) {
+                    webcamTureta.startDetection();
+                    String tagName = webcamTureta.detectTag();
 
-            if (urmarireActivata) {
-                double diferentaHeading = imuIndexer.getHeading(AngleUnit.DEGREES) - turetaHeadingFix;
+                    if (tagName.equals("Blue Tower")) {
+                        urmarireActivata = true;
+                        turetaHeadingFix = imuIndexer.getHeading(AngleUnit.DEGREES);
+                    }
+                }
 
-                int targetPosition = (int)(diferentaHeading * TICKS_PER_DEGREE);
-                outtake.turetaMotor.setTargetPosition(targetPosition);
-                outtake.turetaMotor.setPower(1);
-            } else {
-                outtake.turetaMotor.setTargetPosition(0);
-            }
-
-            telemetry.addData("Stare camera", webcamTureta.isDetecting() ? "Pornita" : "Oprita");
-            telemetry.addData("Distance" , dist);
-            telemetry.addData("Bile mov", purplecount);
-            telemetry.addData("Bile verzi", greencount);
-            telemetry.addData("Bila verde preluată în", greenBallPickedAt);
-            telemetry.addData("Tag detectat", tag);
+                if (gamepad1.dpad_right) {
+                    urmarireActivata = false;
+                    webcamTureta.stopDetection();
+                    outtake.turetaMotor.setTargetPosition(0);
+                    outtake.turetaMotor.setPower(1);
+                }
 
 
-            telemetry.update();
+                if (urmarireActivata) {
+                    double diferentaHeading = imuIndexer.getHeading(AngleUnit.DEGREES) - turetaHeadingFix;
+
+                    int targetPosition = (int) (diferentaHeading * TICKS_PER_DEGREE);
+                    outtake.turetaMotor.setTargetPosition(targetPosition);
+                    outtake.turetaMotor.setPower(1);
+                } else {
+                    outtake.turetaMotor.setTargetPosition(0);
+                }
+
+                telemetry.addData("Stare camera", webcamTureta.isDetecting() ? "Pornita" : "Oprita");
+                telemetry.addData("Distance", dist);
+                telemetry.addData("Bile mov", purplecount);
+                telemetry.addData("Bile verzi", greencount);
+                telemetry.addData("Bila verde preluată în", greenBallPickedAt);
+                telemetry.addData("Tag detectat", tag);
+                telemetry.addData("Target RPM", targetRPM);
+                telemetry.addData("Measured RPM", measuredRPM);
+                telemetry.addData("Time", Time);
+                telemetry.update();
         }
 
-        webcamTureta.close();
+            webcamTureta.close();
+    }
+    private void resetPID() {
+        integral = 0;
+        previousError = 0;
     }
 }
+
 
 

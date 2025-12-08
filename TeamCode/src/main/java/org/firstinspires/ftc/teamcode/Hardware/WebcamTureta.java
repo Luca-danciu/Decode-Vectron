@@ -79,6 +79,14 @@ public class WebcamTureta {
         }
         return 0;
     }
+    public boolean isTagFound() {
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        for (AprilTagDetection d : detections) {
+            if (d.ftcPose != null && d.id == ID_BT) return true;
+        }
+        return false;
+    }
+
     public List<AprilTagDetection> getDetections() {
         return aprilTag.getDetections();
     }
