@@ -25,6 +25,7 @@ public class TuretaTeleOp extends OpMode {
     double alpha1 = 0;
     double headingTuretaGrade;
     double targetTicks;
+    double power;
 
     @Override
     public void init() {
@@ -42,10 +43,19 @@ public class TuretaTeleOp extends OpMode {
         dx = robotX + 40;
         dy = 140 - robotY;
 
+
         alpha1 = Math.toDegrees(Math.atan2(dy , dx));
         headingTuretaGrade = (( 180 - alpha1 ) - headingRobot);
         targetTicks = headingTuretaGrade * TICKS_PER_DEGREE;
-        outtake.TuretaAngle((int) targetTicks);
+        if (targetTicks < 0){
+            power = -1 ;
+            targetTicks = targetTicks * (-1);
+        }else if (targetTicks > 0){
+            power = 1;
+        }else {
+            power = 0;
+        }
+        outtake.TuretaAngle((int) targetTicks , (double) power);
 
         follower.update();
 //11.245

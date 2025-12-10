@@ -100,18 +100,20 @@ public class TeleOp extends LinearOpMode {
         RearRight = hardwareMap.get(DcMotor.class, "RR");
         FrontRight = hardwareMap.get(DcMotor.class, "FR");
         FrontLeft = hardwareMap.get(DcMotor.class, "FL");
+
         distanceSensor = hardwareMap.get(DistanceSensor.class, "SenzorIntakeCH");
         launcher = hardwareMap.get(DcMotor.class, "Launcher");
+
         launcher.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         launcher.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         launcher.setDirection(DcMotorEx.Direction.REVERSE);
         launcher.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+
         colorSensorIndexer.initcolorsensor(hardwareMap);
         indexer.indexerinit(hardwareMap);
         outtake.outtakeinit(hardwareMap);
         webcamTureta.initwebcam(hardwareMap);
         imuIndexer.init(hardwareMap);
-
 
         RearLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RearRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -204,7 +206,7 @@ public class TeleOp extends LinearOpMode {
                 }
 
                 if (dist > 1.70 && dist < 2.5) {
-                    outtake.AngleMax();
+                    outtake.Angle.setPosition(0.7);
                 } else if (dist < 1.70 && dist > 1.50) {
                     outtake.Angle.setPosition(0.65);
                 } else if (dist < 1.50 && dist > 1.00) {
@@ -226,10 +228,10 @@ public class TeleOp extends LinearOpMode {
                     targetRPM1= 4700;
                     resetPID();
                 } else if (dist > 1.70 && dist < 1.85) {
-                    targetRPM1 = 5500;
+                    targetRPM1 = 5700;
                     resetPID();
                 } else if (dist > 1.85 && dist < 2.5) {
-                    targetRPM1 = 5500;
+                    targetRPM1 = 5700;
                     resetPID();
                 } else if (dist > 2.5) {
                     outtake.Angle.setPosition(0.78);
@@ -259,10 +261,10 @@ public class TeleOp extends LinearOpMode {
                             timerToSee.reset();
                             stopIntake = false;
                             targetRPM = targetRPM1;
-                            if (targetRPM == 6000){
+                            if (targetRPM1 == 6000){
                                 pidTargetRPM = 12000;
                             }else {
-                                pidTargetRPM = targetRPM;
+                                pidTargetRPM = targetRPM1;
                             }
                             if (!colectareSelectiva) {
                                 indexer.OuttakePose1();

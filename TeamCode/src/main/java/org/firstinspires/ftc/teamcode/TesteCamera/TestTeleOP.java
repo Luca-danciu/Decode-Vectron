@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
+import org.firstinspires.ftc.teamcode.Hardware.Outtake;
 
 // ✅ IMPORTURI PENTRU PANELS
 import com.bylazar.configurables.annotations.Configurable;
@@ -26,6 +27,7 @@ public class TestTeleOP extends OpMode {
     public static double kI = 0.000007;
     public static double kD = 0.0001;
     public static double kF = 0.0001468;
+    public static double servo = 0.28;
 
     private double integral = 0;
     private double previousError = 0;
@@ -37,6 +39,7 @@ public class TestTeleOP extends OpMode {
     public static double targetRPM = 0; // ✅ ÎL POȚI VEDEA ȘI DIN PANELS
 
     Indexer indexer = new Indexer();
+    Outtake outtake = new Outtake();
 //    TelemetryManager telem
 
     @Override
@@ -50,6 +53,7 @@ public class TestTeleOP extends OpMode {
         motor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
         indexer.indexerinit(hardwareMap);
+        outtake.outtakeinit(hardwareMap);
 
         // ✅ ACTIVARE PANELS CONFIGURABLE
         PanelsConfigurables.INSTANCE.refreshClass(this);
@@ -103,6 +107,7 @@ public class TestTeleOP extends OpMode {
         }
 
         double currentTime = timer.seconds();
+        outtake.Angle.setPosition(servo);
 
         if (currentTime >= dt) {
 

@@ -25,14 +25,14 @@ public class Outtake {
         turetaMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         turetaMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
-    public void TuretaAngle(int ticks){
+    public void TuretaAngle(int ticks , double power){
         turetaMotor.setTargetPosition(ticks);
         turetaMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        turetaMotor.setPower(1);
+        turetaMotor.setPower(power);
 
     }
     public void Charge(){
-        Launcher.setPower(-0.77);
+        Launcher.setPower(-0.8);
     }
     public void StopLauncher(){
         Launcher.setPower(0);
