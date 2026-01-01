@@ -101,8 +101,7 @@ public class TestTeleOP extends OpMode {
             motor.setPower(0);
             integral = 0;
             previousError = 0;
-            telemetry.addLine("STOP MODE");
-            telemetry.update();
+
             return;
         }
 

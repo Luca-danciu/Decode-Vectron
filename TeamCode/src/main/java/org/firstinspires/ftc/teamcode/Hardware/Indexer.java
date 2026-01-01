@@ -36,28 +36,32 @@ public class Indexer {
     }
 
     public void PickPose1(){
-        IndexerL.setPosition(0);
-        IndexerR.setPosition(0);
+        IndexerL.setPosition(0.025);
+        IndexerR.setPosition(0.025);
     }
     public void PickPose2(){
-        IndexerL.setPosition(0.35);
-        IndexerR.setPosition(0.35);
+        IndexerL.setPosition(0.395);
+        IndexerR.setPosition(0.395);
     }
     public void PickPose3(){
-        IndexerL.setPosition(0.75);
-        IndexerR.setPosition(0.75);
+        IndexerL.setPosition(0.76);
+        IndexerR.setPosition(0.76);
     }
     public void OuttakePose1(){
-        IndexerL.setPosition(0.17);
-        IndexerR.setPosition(0.17);
+        IndexerL.setPosition(0.21);
+        IndexerR.setPosition(0.21);
     }
     public void OuttakePose2(){
-        IndexerL.setPosition(0.56);
-        IndexerR.setPosition(0.56);
+        IndexerL.setPosition(0.58);
+        IndexerR.setPosition(0.58);
     }
     public void OuttakePose3(){
-        IndexerL.setPosition(0.92);
-        IndexerR.setPosition(0.92);
+        IndexerL.setPosition(0.96);
+        IndexerR.setPosition(0.96);
+    }
+    public double IndexerGetPos(){
+        return  IndexerR.getPosition();
+
     }
     public void Push(){
         Banana.setPosition(0.3);

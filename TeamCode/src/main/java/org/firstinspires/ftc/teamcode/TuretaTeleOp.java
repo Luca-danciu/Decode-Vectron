@@ -3,6 +3,9 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Hardware.IMUIndexer;
@@ -15,7 +18,7 @@ public class TuretaTeleOp extends OpMode {
     public int towerX = 70;
     public int towerY = -70;
     IMUIndexer imuIndexer = new IMUIndexer();
-    Outtake outtake = new Outtake();
+    private DcMotorEx turret;
     static final double TICKS_PER_DEGREE = 6.195;
     double robotX = 0;
     double robotY = 0;
@@ -24,12 +27,26 @@ public class TuretaTeleOp extends OpMode {
     double headingRobot = 0;
     double alpha1 = 0;
     double headingTuretaGrade;
-    double targetTicks;
+    double targetTicks = 0;
     double power;
+    public static final int MAX_TICKS = (int)(180 * TICKS_PER_DEGREE);
 
+    public static double kP = 0.005;
+    public static double kI = 0.0;
+    public static double kD = 0.0002;
+    public static double kF = 0.05;
+
+    // ================= PID =================
+    private double integral = 0;
+    private double lastError = 0;
     @Override
     public void init() {
-        outtake.outtakeinit(hardwareMap);
+        turret = hardwareMap.get(DcMotorEx.class, "Tureta");
+
+        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        turret.setDirection(DcMotorSimple.Direction.REVERSE);
         follower = Constants.createFollower(hardwareMap);
         imuIndexer.init(hardwareMap);
     }
@@ -40,7 +57,7 @@ public class TuretaTeleOp extends OpMode {
         robotY = follower.getPose().getY();
         headingRobot = imuIndexer.getHeading(AngleUnit.DEGREES);
 //        19734125
-        dx = robotX + 40;
+        dx = robotX + 10;
         dy = 140 - robotY;
 
 
@@ -55,7 +72,16 @@ public class TuretaTeleOp extends OpMode {
         }else {
             power = 0;
         }
-        outtake.TuretaAngle((int) targetTicks , (double) power);
+        double targetPosition = targetTicks;
+
+        targetPosition = wrapTicks((int) targetPosition);
+
+        int currentPosition = wrapTicks(turret.getCurrentPosition());
+
+
+        turret.setPower(power);
+
+//        outtake.TuretaAngle((int) targetTicks , (double) power);
 
         follower.update();
 //11.245
@@ -67,4 +93,31 @@ public class TuretaTeleOp extends OpMode {
 
 
     }
+    private double pidf(int target, int current) {
+
+        int error = wrapTicks(target - current);
+
+        integral += error;
+        double derivative = error - lastError;
+        lastError = error;
+
+        return (kP * error)
+                + (kI * integral)
+                + (kD * derivative)
+                + (kF * Math.signum(error));
+    }
+
+    // ================= WRAP FUNCTION =================
+    private int wrapTicks(int ticks) {
+        int range = MAX_TICKS * 2;
+
+        while (ticks > MAX_TICKS) {
+            ticks -= range;
+        }
+        while (ticks < -MAX_TICKS) {
+            ticks += range;
+        }
+        return ticks;
+    }
+
 }
