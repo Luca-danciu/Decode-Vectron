@@ -1,5 +1,6 @@
-package org.firstinspires.ftc.teamcode.TesteCamera;
+package org.firstinspires.ftc.teamcode.HardwareTests;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -7,6 +8,7 @@ import org.firstinspires.ftc.teamcode.Hardware.ColorSensorIndexer;
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
 
 @TeleOp
+@Disabled
 public class ColorSensorTest extends OpMode {
     ColorSensorIndexer bench = new ColorSensorIndexer();
     ColorSensorIndexer.DetectedColor detectedColor ;

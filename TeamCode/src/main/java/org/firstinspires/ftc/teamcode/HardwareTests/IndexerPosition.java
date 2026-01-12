@@ -1,12 +1,15 @@
-package org.firstinspires.ftc.teamcode.TesteCamera;
+package org.firstinspires.ftc.teamcode.HardwareTests;
 
 import com.bylazar.configurables.annotations.Configurable;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
 @TeleOp
 @Configurable
+@Disabled
+
 public class IndexerPosition extends OpMode {
     public static double p=0;
     Indexer indexer = new Indexer();

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.TesteCamera;
+package org.firstinspires.ftc.teamcode.HardwareTests;
 
 import org.openftc.easyopencv.OpenCvPipeline;
 import org.opencv.core.*;

@@ -1,6 +1,5 @@
-package org.firstinspires.ftc.teamcode.TesteCamera;
+package org.firstinspires.ftc.teamcode.HardwareTests;
 
-import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -57,7 +56,7 @@ public class TestTeleOP extends OpMode {
 
         // ✅ ACTIVARE PANELS CONFIGURABLE
         PanelsConfigurables.INSTANCE.refreshClass(this);
-
+        indexer.Down();
         timer.reset();
     }
 
@@ -71,7 +70,7 @@ public class TestTeleOP extends OpMode {
         }
 
         if (gamepad1.triangle) {
-            targetRPM = 6000;
+            targetRPM = 5500;
             resetPID();
         }
 
@@ -91,8 +90,8 @@ public class TestTeleOP extends OpMode {
         }
 
         // ✅ INDEXER
-        if (gamepad1.dpad_up) indexer.Push();
-        if (gamepad1.dpad_down) indexer.Down();
+        if (gamepad1.left_bumper) indexer.Push();
+        if (gamepad1.right_bumper) indexer.Down();
 
         targetRPM = Math.max(0, Math.min(12000, targetRPM));
 

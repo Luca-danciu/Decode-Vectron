@@ -61,19 +61,19 @@
 //
 //        scorePreload = new Path(new BezierLine(detectPose, scorePose));
 //        scorePreload.setLinearHeadingInterpolation(detectPose.getHeading(), scorePose.getHeading());
-////    scorePreload.setConstantInterpolation(startPose.getHeading()); */
+//    scorePreload.setConstantInterpolation(startPose.getHeading()); */
 //
 //        grabPickup1Angle = new Path(new BezierLine(scorePose, pickup1PoseAngle));
 //        grabPickup1Angle.setLinearHeadingInterpolation(scorePose.getHeading(), pickup1PoseAngle.getHeading());
 //
-////        grabPickup1 = new Path((new BezierCurve(pickup1PoseAngle, pickup1Pose)));
-////        grabPickup1.setLinearHeadingInterpolation(pickup1PoseAngle.getHeading(), pickup1Pose.getHeading());
-////        grabPickup1.setVelocityConstraint(10000);
+//        grabPickup1 = new Path((new BezierCurve(pickup1PoseAngle, pickup1Pose)));
+//        grabPickup1.setLinearHeadingInterpolation(pickup1PoseAngle.getHeading(), pickup1Pose.getHeading());
+//        grabPickup1.setVelocityConstraint(10000);
 //
 //        grabPickup1 = follower.pathBuilder()
-////                .addPath(new BezierLine(scorePose, pickup1PoseAngle))
-////                .setLinearHeadingInterpolation(scorePose.getHeading(), pickup1PoseAngle.getHeading())
-////                .setVelocityConstraint(1)
+//                .addPath(new BezierLine(scorePose, pickup1PoseAngle))
+//                .setLinearHeadingInterpolation(scorePose.getHeading(), pickup1PoseAngle.getHeading())
+//                .setVelocityConstraint(1)
 //                .addPath((new BezierCurve(pickup1PoseAngle, pickup1Pose)))
 //                .setLinearHeadingInterpolation( pickup1PoseAngle.getHeading(), pickup1Pose.getHeading())
 //                .build();
@@ -109,30 +109,29 @@
 //                .addPath(new BezierLine(pickup3Pose , scorePose))
 //                .setLinearHeadingInterpolation( pickup3Pose.getHeading() ,scorePose.getHeading())
 //                .build();
-////
-////        /* This is our grabPickup2 PathChain. We are using a single path with a BezierLine, which is a straight line. */
-////        grabPickup2 = follower.pathBuilder()
-////                .addPath(new BezierLine(detectPose, pickup1Pose))
-////                .setLinearHeadingInterpolation(detectPose.getHeading(), pickup1Pose.getHeading())
-////                .build();
-////
-////        /* This is our scorePickup2 PathChain. We are using a single path with a BezierLine, which is a straight line. */
-////        scorePickup2 = follower.pathBuilder()
-////                .addPath(new BezierLine(pickup1Pose, detectPose))
-////                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), detectPose.getHeading())
-////                .build();
-////
-////        /* This is our grabPickup3 PathChain. We are using a single path with a BezierLine, which is a straight line. */
-////        grabPickup3 = follower.pathBuilder()
-////                .addPath(new BezierLine(detectPose, pickup3Pose))
-////                .setLinearHeadingInterpolation(detectPose.getHeading(), pickup3Pose.getHeading())
-////                .build();
-////
-////        /* This is our scorePickup3 PathChain. We are using a single path with a BezierLine, which is a straight line. */
-////        scorePickup3 = follower.pathBuilder()
-////                .addPath(new BezierLine(pickup3Pose, detectPose))
-////                .setLinearHeadingInterpolation(pickup3Pose.getHeading(), detectPose.getHeading())
-////                .build();
+//        /* This is our grabPickup2 PathChain. We are using a single path with a BezierLine, which is a straight line. */
+//        grabPickup2 = follower.pathBuilder()
+//                .addPath(new BezierLine(detectPose, pickup1Pose))
+//                .setLinearHeadingInterpolation(detectPose.getHeading(), pickup1Pose.getHeading())
+//                .build();
+//
+//        /* This is our scorePickup2 PathChain. We are using a single path with a BezierLine, which is a straight line. */
+//        scorePickup2 = follower.pathBuilder()
+//                .addPath(new BezierLine(pickup1Pose, detectPose))
+//                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), detectPose.getHeading())
+//                .build();
+//
+//        /* This is our grabPickup3 PathChain. We are using a single path with a BezierLine, which is a straight line. */
+//        grabPickup3 = follower.pathBuilder()
+//                .addPath(new BezierLine(detectPose, pickup3Pose))
+//                .setLinearHeadingInterpolation(detectPose.getHeading(), pickup3Pose.getHeading())
+//                .build();
+//
+//        /* This is our scorePickup3 PathChain. We are using a single path with a BezierLine, which is a straight line. */
+//        scorePickup3 = follower.pathBuilder()
+//                .addPath(new BezierLine(pickup3Pose, detectPose))
+//                .setLinearHeadingInterpolation(pickup3Pose.getHeading(), detectPose.getHeading())
+//                .build();
 //    }
 //
 //    public void autonomousPathUpdate() {
@@ -968,231 +967,231 @@
 //
 //                }
 //                break;
-////            case 47:
-////                follower.followPath(scorePickup2 , true);
-////                actionTimer.resetTimer();
-////                pathState = 48;
-////                break;
-////            case 48:
-////                if (actionTimer.getElapsedTimeSeconds() > 1.5) {
-////                    indexer.KeepInside();
-////                    outtake.AngleMax();
-////                    if (greenBallPickedAt.equals(pp1)) {
-////                        String caseUsed = detectedCase;
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose2();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose3();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose3();
-////                                break;
-////                        }
-////                    }
-////                    if (greenBallPickedAt.equals(pp2)) {
-////                        String caseUsed = detectedCase;
-////
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose3();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose2();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose2();
-////                                break;
-////                        }
-////                    }
-////                    if (greenBallPickedAt.equals(pp3)) {
-////                        String caseUsed = detectedCase;
-////
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose2();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose2();
-////                                break;
-////                        }
-////                    }
-////                    pathTimer.resetTimer();
-////                    setPathState(49);
-////                }
-////                break;
-////            case 49:
-////                if (pathTimer.getElapsedTimeSeconds() > 0.7) {
-////                    indexer.Push();
-////                    pathTimer.resetTimer();
-////                    setPathState(50);
-////                }
-////                break;
-////
-////            case 50:
-////                if (pathTimer.getElapsedTimeSeconds() > 0.4) {
-////                    indexer.Down();
-////                    pathTimer.resetTimer();
-////                    setPathState(51);
-////                }
-////            case 51:
-////                if (pathTimer.getElapsedTimeSeconds() > 0.4) {
-////                    indexer.KeepInside();
-////                    outtake.Charge();
-////                    if (greenBallPickedAt.equals(pp1)) {
-////                        String caseUsed = detectedCase;
-////
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose3();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose2();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            default:
-////                                indexer.OuttakePose2();
-////                                break;
-////                        }
-////                    }
-////                    if (greenBallPickedAt.equals(pp2)) {
-////                        String caseUsed = detectedCase;
-////
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose2();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose3();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            default:
-////                                indexer.OuttakePose2();
-////                                break;
-////                        }
-////                    }
-////                    if (greenBallPickedAt.equals(pp3)) {
-////                        String caseUsed = detectedCase;
-////
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose2();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose3();
-////                                break;
-////                            default:
-////                                indexer.OuttakePose2();
-////                                break;
-////                        }
-////                    }
-////                    pathTimer.resetTimer();
-////                    setPathState(52);
-////                }
-////                break;
-////            case 52:
-////                if (pathTimer.getElapsedTimeSeconds() > 0.5) {
-////                    indexer.Push();
-////                    pathTimer.resetTimer();
-////                    setPathState(53);
-////                }
-////                break;
-////
-////            case 53:
-////                if (pathTimer.getElapsedTimeSeconds() > 0.4){
-////                    indexer.Down();
-////                    pathTimer.resetTimer();
-////                    pathState = 54;
-////                }
-////            case 54:
-////                if (pathTimer.getElapsedTimeSeconds() > 0.4) {
-////                    indexer.KeepInside();
-////                    outtake.Charge();
-////                    if (greenBallPickedAt.equals(pp1)) {
-////                        String caseUsed = detectedCase;
-////
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose2();
-////                                break;
-////                            default:
-////                                indexer.OuttakePose3();
-////                                break;
-////                        }
-////                    }
-////                    if (greenBallPickedAt.equals(pp2)) {
-////                        String caseUsed = detectedCase;
-////
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose3();
-////                                break;
-////                            default:
-////                                indexer.OuttakePose3();
-////                                break;
-////                        }
-////                    }
-////                    if (greenBallPickedAt.equals(pp3)) {
-////                        String caseUsed = detectedCase;
-////
-////                        switch (caseUsed) {
-////                            case "GPP":
-////                                indexer.OuttakePose3();
-////                                break;
-////                            case "PGP":
-////                                indexer.OuttakePose3();
-////                                break;
-////                            case "PPG":
-////                                indexer.OuttakePose1();
-////                                break;
-////                            default:
-////                                indexer.OuttakePose3();
-////                                break;
-////                        }
-////                    }
-////                    pathTimer.resetTimer();
-////                    pathState = 55;
-////                }
-////                break;
-////            case 55:
-////                if (pathTimer.getElapsedTimeSeconds() > 0.5) {
-////                    indexer.Push();
-////                    pathTimer.resetTimer();
-////                    pathState = 56;
-////                }
-////                break;
-////
-////            case 56:
-////                if (pathTimer.getElapsedTimeSeconds() > 0.4){
-////                    indexer.Down();
-////                    outtake.StopLauncher();
-////                    pathTimer.resetTimer();
-////                    pathState = 57;
-////                }
-////                break;
+//            case 47:
+//                follower.followPath(scorePickup2 , true);
+//                actionTimer.resetTimer();
+//                pathState = 48;
+//                break;
+//            case 48:
+//                if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+//                    indexer.KeepInside();
+//                    outtake.AngleMax();
+//                    if (greenBallPickedAt.equals(pp1)) {
+//                        String caseUsed = detectedCase;
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose2();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose3();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose3();
+//                                break;
+//                        }
+//                    }
+//                    if (greenBallPickedAt.equals(pp2)) {
+//                        String caseUsed = detectedCase;
+//
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose3();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose2();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose2();
+//                                break;
+//                        }
+//                    }
+//                    if (greenBallPickedAt.equals(pp3)) {
+//                        String caseUsed = detectedCase;
+//
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose2();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose2();
+//                                break;
+//                        }
+//                    }
+//                    pathTimer.resetTimer();
+//                    setPathState(49);
+//                }
+//                break;
+//            case 49:
+//                if (pathTimer.getElapsedTimeSeconds() > 0.7) {
+//                    indexer.Push();
+//                    pathTimer.resetTimer();
+//                    setPathState(50);
+//                }
+//                break;
+//
+//            case 50:
+//                if (pathTimer.getElapsedTimeSeconds() > 0.4) {
+//                    indexer.Down();
+//                    pathTimer.resetTimer();
+//                    setPathState(51);
+//                }
+//            case 51:
+//                if (pathTimer.getElapsedTimeSeconds() > 0.4) {
+//                    indexer.KeepInside();
+//                    outtake.Charge();
+//                    if (greenBallPickedAt.equals(pp1)) {
+//                        String caseUsed = detectedCase;
+//
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose3();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose2();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            default:
+//                                indexer.OuttakePose2();
+//                                break;
+//                        }
+//                    }
+//                    if (greenBallPickedAt.equals(pp2)) {
+//                        String caseUsed = detectedCase;
+//
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose2();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose3();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            default:
+//                                indexer.OuttakePose2();
+//                                break;
+//                        }
+//                    }
+//                    if (greenBallPickedAt.equals(pp3)) {
+//                        String caseUsed = detectedCase;
+//
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose2();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose3();
+//                                break;
+//                            default:
+//                                indexer.OuttakePose2();
+//                                break;
+//                        }
+//                    }
+//                    pathTimer.resetTimer();
+//                    setPathState(52);
+//                }
+//                break;
+//            case 52:
+//                if (pathTimer.getElapsedTimeSeconds() > 0.5) {
+//                    indexer.Push();
+//                    pathTimer.resetTimer();
+//                    setPathState(53);
+//                }
+//                break;
+//
+//            case 53:
+//                if (pathTimer.getElapsedTimeSeconds() > 0.4){
+//                    indexer.Down();
+//                    pathTimer.resetTimer();
+//                    pathState = 54;
+//                }
+//            case 54:
+//                if (pathTimer.getElapsedTimeSeconds() > 0.4) {
+//                    indexer.KeepInside();
+//                    outtake.Charge();
+//                    if (greenBallPickedAt.equals(pp1)) {
+//                        String caseUsed = detectedCase;
+//
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose2();
+//                                break;
+//                            default:
+//                                indexer.OuttakePose3();
+//                                break;
+//                        }
+//                    }
+//                    if (greenBallPickedAt.equals(pp2)) {
+//                        String caseUsed = detectedCase;
+//
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose3();
+//                                break;
+//                            default:
+//                                indexer.OuttakePose3();
+//                                break;
+//                        }
+//                    }
+//                    if (greenBallPickedAt.equals(pp3)) {
+//                        String caseUsed = detectedCase;
+//
+//                        switch (caseUsed) {
+//                            case "GPP":
+//                                indexer.OuttakePose3();
+//                                break;
+//                            case "PGP":
+//                                indexer.OuttakePose3();
+//                                break;
+//                            case "PPG":
+//                                indexer.OuttakePose1();
+//                                break;
+//                            default:
+//                                indexer.OuttakePose3();
+//                                break;
+//                        }
+//                    }
+//                    pathTimer.resetTimer();
+//                    pathState = 55;
+//                }
+//                break;
+//            case 55:
+//                if (pathTimer.getElapsedTimeSeconds() > 0.5) {
+//                    indexer.Push();
+//                    pathTimer.resetTimer();
+//                    pathState = 56;
+//                }
+//                break;
+//
+//            case 56:
+//                if (pathTimer.getElapsedTimeSeconds() > 0.4){
+//                    indexer.Down();
+//                    outtake.StopLauncher();
+//                    pathTimer.resetTimer();
+//                    pathState = 57;
+//                }
+//                break;
 //
 //        }
 //    }
@@ -1297,3 +1296,104 @@
 //    public void stop() {
 //    }
 //}
+
+//public static class Paths {
+//
+//    public PathChain pickup1Prepare;
+//    public PathChain pickup1;
+//    public PathChain scorePickup1;
+//    public PathChain pickup2Prepare;
+//    public PathChain pickup2;
+//    public PathChain scorePickup2;
+//    public PathChain pickup3Prepare;
+//    public PathChain pickup3;
+//    public PathChain scorePickup3;
+//    public PathChain park;
+//
+//    public Paths(Follower follower) {
+//        pickup1Prepare = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(63.000, 9.000), new Pose(44.000, 36.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+//                .build();
+//
+//        pickup1 = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(44.000, 36.000), new Pose(10.000, 36.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+//                .build();
+//
+//        scorePickup1 = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(10.000, 36.000), new Pose(60.000, 19.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(120))
+//                .build();
+//
+//        pickup2Prepare = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(60.000, 19.000), new Pose(44.000, 60.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(180))
+//                .build();
+//
+//        pickup2 = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(44.000, 60.000), new Pose(10.000, 60.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+//                .build();
+//
+//        scorePickup2 = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(10.000, 60.000), new Pose(60.000, 19.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(120))
+//                .build();
+//
+//        pickup3Prepare = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(60.000, 19.000), new Pose(14.500, 18.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(200))
+//                .build();
+//
+//        pickup3 = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(14.500, 18.000), new Pose(14.500, 11.400))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(200), Math.toRadians(-130))
+//                .build();
+//
+//        scorePickup3 = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(14.500, 11.400), new Pose(60.000, 19.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(-130), Math.toRadians(120))
+//                .build();
+//
+//        park = follower
+//                .pathBuilder()
+//                .addPath(
+//                        new BezierLine(new Pose(60.000, 19.000), new Pose(40.000, 19.000))
+//                )
+//                .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(180))
+//                .build();
+//    }
+//}
+//
+
+
+import com.pedropathing.geometry.Pose;
+

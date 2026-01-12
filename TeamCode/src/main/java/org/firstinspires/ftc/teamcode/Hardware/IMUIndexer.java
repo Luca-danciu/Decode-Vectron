@@ -17,6 +17,7 @@ public class IMUIndexer {
                 RevHubOrientationOnRobot.UsbFacingDirection.UP
         );
         imu.initialize(new IMU.Parameters(RevOrientation));
+
     }
 
     public double getHeading(AngleUnit angleUnit){

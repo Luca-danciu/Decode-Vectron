@@ -1,7 +1,7 @@
-package org.firstinspires.ftc.teamcode.TesteCamera;
+package org.firstinspires.ftc.teamcode.HardwareTests;
 
 import android.util.Size;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;

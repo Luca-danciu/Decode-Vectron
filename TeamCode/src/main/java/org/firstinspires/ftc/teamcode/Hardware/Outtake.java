@@ -42,7 +42,7 @@ public class Outtake {
         Angle.setPosition(0.83);
     }
     public void AngleMin(){
-        Angle.setPosition(0.27);
+        Angle.setPosition(0.46);
     }
 
 

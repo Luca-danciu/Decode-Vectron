@@ -66,6 +66,9 @@ public class Indexer {
     public void Push(){
         Banana.setPosition(0.3);
     }
+    public void PushBlue(){
+        Banana.setPosition(0.36);
+    }
     public void Down(){
         Banana.setPosition(0.7);
     }
