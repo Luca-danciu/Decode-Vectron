@@ -1,9 +1,13 @@
-package org.firstinspires.ftc.teamcode.OpModes;
+package org.firstinspires.ftc.teamcode.HardwareTests;
 
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.HeadingInterpolator;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathChain;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -25,10 +29,11 @@ import org.firstinspires.ftc.teamcode.Hardware.Outtake;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 @Configurable
 @TeleOp
-public class TeleOpRed extends LinearOpMode {
+public class TeleOpNew extends LinearOpMode {
 
     //Hardware
     public DistanceSensor distanceSensor;
@@ -45,9 +50,9 @@ public class TeleOpRed extends LinearOpMode {
     DigitalChannel ledGreenD;
     DigitalChannel ledRedS;
     DigitalChannel ledGreenS;
+    
 
-
-    //valori
+//valori
     double distance = 0;
     public static double interval1 = 0.552;
     public static double interval2 = 0.7;
@@ -56,7 +61,7 @@ public class TeleOpRed extends LinearOpMode {
     int purplecount = 0;
     int greencount = 0;
     double Time = 0;
-    public int towerX = 133;
+    public int towerX = 5;
     public int towerY = 140;
 
 
@@ -77,8 +82,9 @@ public class TeleOpRed extends LinearOpMode {
     public static double kFT = 0.05;
     public static final int MAX_TICKST = (int)(180 * TICKS_PER_DEGREE);
     public static final int MIN_TICKST = -MAX_TICKST;
-    private final Pose START_POSE = new Pose(110, 84, Math.toRadians(0)); // Exemplu: poziție start + heading 90° (spre nord)
-
+    private final Pose START_POSE = new Pose(35.0, 84, Math.toRadians(180)); // Exemplu: poziție start + heading 90° (spre nord)
+    int turretHoldTicks = 0;
+    boolean resumeFromLast = false;
 
     static final double TICKS_PER_DEGREET = 6.533;
     public static final int MAX_TICKS = (int)(180 * TICKS_PER_DEGREET);
@@ -94,7 +100,7 @@ public class TeleOpRed extends LinearOpMode {
 
     public boolean TuretaToZero = false;
 
-    //verificari
+//verificari
     boolean TakeOUT = false;
     boolean newCaseDetected = false;
     boolean allBallsIn = false;
@@ -116,7 +122,7 @@ public class TeleOpRed extends LinearOpMode {
     public String pp3 = "PickPose3";
     String greenBallPickedAt = "Nicio bila verde preluata";
     ColorSensorIndexer.DetectedColor detectedColor1, detectedColor2, detectedColor3;
-    //Pidf aruncare
+//Pidf aruncare
     private static final double CPR = 18.666;
 
     // ✅ PIDF REGLABIL DIN PANELS (OBLIGATORIU public static)
@@ -142,8 +148,13 @@ public class TeleOpRed extends LinearOpMode {
     public static double targetR4 = 4800;
 
     double measuredRPM = 0;
-    boolean resumeFromLast = false;
-    int turretHoldTicks = 0;
+
+//Parcare automata
+    private boolean pathFinished = false;
+    private boolean automatedDrive;
+    private Supplier<PathChain> parcare;
+
+
 
     public void runOpMode() throws InterruptedException {
 
@@ -161,7 +172,7 @@ public class TeleOpRed extends LinearOpMode {
         launcher = hardwareMap.get(DcMotor.class, "Launcher");
         DcMotorEx turret = hardwareMap.get(DcMotorEx.class, "Tureta");
 
-        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         turret.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -194,9 +205,14 @@ public class TeleOpRed extends LinearOpMode {
         drivetrain.drivetraininit(hardwareMap);
 
         timerToSee.reset();
-
+        
         follower = Constants.createFollower(hardwareMap);
         follower.setPose( START_POSE );
+
+        parcare = () -> follower.pathBuilder() //Lazy Curve Generation
+                .addPath(new Path(new BezierLine(follower::getPose, new Pose(105.2, 33.5))))
+                .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(follower::getHeading, Math.toRadians(90), 0.8))
+                .build();
 
         waitForStart();
 
@@ -210,20 +226,38 @@ public class TeleOpRed extends LinearOpMode {
         while (opModeIsActive() && !isStopRequested()) {
 
             follower.update();
-            if (Math.abs(gamepad1.left_stick_y) < 0.05 &&
-                    Math.abs(gamepad1.left_stick_x) < 0.05 &&
-                    Math.abs(gamepad1.right_stick_x) < 0.05 &&
-                    Math.abs(gamepad1.left_stick_y) > -0.05 &&
-                    Math.abs(gamepad1.left_stick_x) > -0.05 &&
-                    Math.abs(gamepad1.right_stick_x) > -0.05) {
 
-                drivetrain.activeBrake();
-            } else {
-                drivetrain.drive(-gamepad1.left_stick_y,
-                        gamepad1.left_stick_x,
-                        gamepad1.right_stick_x);
+            if (gamepad1.cross && !automatedDrive) {
+                follower.followPath(parcare.get());
+                automatedDrive = true;
+                pathFinished = false;
             }
+            if (!automatedDrive) {
+                if (Math.abs(gamepad1.left_stick_y) < 0.05 &&
+                        Math.abs(gamepad1.left_stick_x) < 0.05 &&
+                        Math.abs(gamepad1.right_stick_x) < 0.05 &&
+                        Math.abs(gamepad1.left_stick_y) > -0.05 &&
+                        Math.abs(gamepad1.left_stick_x) > -0.05 &&
+                        Math.abs(gamepad1.right_stick_x) > -0.05) {
 
+                    drivetrain.activeBrake();
+                } else {
+                    drivetrain.drive(-gamepad1.left_stick_y,
+                            gamepad1.left_stick_x,
+                            gamepad1.right_stick_x);
+                }
+            }
+            if (automatedDrive && !follower.isBusy() && !pathFinished) {
+                pathFinished = true;
+
+                // Opreste complet robotul
+                drivetrain.drive(0, 0, 0);
+                drivetrain.activeBrake();
+            }
+            if (pathFinished && gamepad1.square) {
+                automatedDrive = false;
+                pathFinished = false;
+            }
 //            drivetrain.drive(-gamepad1.left_stick_y,
 //                    gamepad1.left_stick_x,
 //                    gamepad1.right_stick_x
@@ -241,10 +275,10 @@ public class TeleOpRed extends LinearOpMode {
                 ledRedS.setState(false);
                 ledGreenS.setState(true);
             }
-
+            
 //Tureta
             if (gamepad1.left_bumper){
-                follower.setPose( new Pose(9 , 9 ,Math.toRadians(0)));
+                follower.setPose( new Pose(135 , 7 ,Math.toRadians(180)));
             }
             switch (stateTureta){
                 case 0:
@@ -285,7 +319,7 @@ public class TeleOpRed extends LinearOpMode {
                         }
                     }
                     break;
-
+                    
                 case 1:
                     if (statetureta.milliseconds() > 400){
                         LLResult result = limelight.limelight.getLatestResult();
@@ -302,7 +336,7 @@ public class TeleOpRed extends LinearOpMode {
                         LLResultTypes.FiducialResult targetTag = null;
                         if (tags != null) {
                             for (LLResultTypes.FiducialResult t : tags) {
-                                if (t.getFiducialId() == 24) {
+                                if (t.getFiducialId() == 20) {
                                     targetTag = t;
                                     break;
                                 }
@@ -346,7 +380,6 @@ public class TeleOpRed extends LinearOpMode {
                     break;
             }
 
-
 //Detectie tureta ATTracking
 
             limelight.limelight.start();
@@ -357,9 +390,9 @@ public class TeleOpRed extends LinearOpMode {
 
 //Detectie Tag
             if (tag != null && (tag.equals("GPP") || tag.equals("PGP") || tag.equals("PPG"))) {
-                detectedCase = tag;
-                newCaseDetected = true;
-            }
+                    detectedCase = tag;
+                    newCaseDetected = true;
+                }
 
 //Unghi outtake
 
@@ -889,50 +922,50 @@ public class TeleOpRed extends LinearOpMode {
             }
 //Resetare colectarea selectiva
             if (gamepad1.ps) {
-                stateCollect = 96;
-                colectareSelectiva = true;
-                stopIntake = false;
-                greencount = 0;
-                purplecount = 0;
-                greenBallPickedAt = "Nicio bila verde preluata";
-            }
+                    stateCollect = 96;
+                    colectareSelectiva = true;
+                    stopIntake = false;
+                    greencount = 0;
+                    purplecount = 0;
+                    greenBallPickedAt = "Nicio bila verde preluata";
+                }
 
 //Intake Role
             if (gamepad1.left_trigger > 0) {
-                indexer.KeepInside();
-            } else if (gamepad1.right_trigger > 0 ) {
-                indexer.TakeOut();
-            }else if(TakeOUT){
-                indexer.TakeOutBit();
-            }else if (TakeGreenBallOut.milliseconds() < 400) {
-                indexer.TakeOut();
-                greencount = 1;
-            } else if (TakePurpleBallOut.milliseconds() < 400) {
+                    indexer.KeepInside();
+                } else if (gamepad1.right_trigger > 0 ) {
+                    indexer.TakeOut();
+                }else if(TakeOUT){
+                    indexer.TakeOutBit();
+                }else if (TakeGreenBallOut.milliseconds() < 400) {
+                    indexer.TakeOut();
+                    greencount = 1;
+                } else if (TakePurpleBallOut.milliseconds() < 400) {
                 indexer.TakeOut();
                 purplecount = 2;
             }else if (stopIntake && collecttimer.milliseconds() > 700) {
-                indexer.Stop();
-            } else {
-                indexer.Colect();
-            }
+                    indexer.Stop();
+                } else {
+                    indexer.Colect();
+                }
 
 //Reset Collect
             if (gamepad1.options) {
-                stateCollect = 0;
-                TakeOUT = false;
-                stopIntake = false;
-            }
+                    stateCollect = 0;
+                    TakeOUT = false;
+                    stopIntake = false;
+                }
 
 //Power Launcher
             if (gamepad1.dpad_left && DpadPressed.milliseconds() > 200) {
-                DpadPressed.reset();
-                powerLauncher -= 0.1;
-            }
+                    DpadPressed.reset();
+                    powerLauncher -= 0.1;
+                }
             if (gamepad1.dpad_right && DpadPressed.milliseconds() > 200) {
-                DpadPressed.reset();
-                powerLauncher += 0.1;
+                    DpadPressed.reset();
+                    powerLauncher += 0.1;
 
-            }
+                }
 
             telemetry.addData("Stare camera", limelight.limelight.isRunning() ? "Pornita" : "Oprita");
             telemetry.addData("Distanta", dist);
@@ -947,8 +980,8 @@ public class TeleOpRed extends LinearOpMode {
             telemetry.update();
 
         }
-        limelight.limelight.stop();
-    }
+            limelight.limelight.stop();
+     }
 
     private double pidf(int target, int current) {
 

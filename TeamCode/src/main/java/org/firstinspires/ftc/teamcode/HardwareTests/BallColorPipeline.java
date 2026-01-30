@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.HardwareTests;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+
 import org.openftc.easyopencv.OpenCvPipeline;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
@@ -8,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
 public class BallColorPipeline extends OpenCvPipeline {
 
     private String colorSequence = "";

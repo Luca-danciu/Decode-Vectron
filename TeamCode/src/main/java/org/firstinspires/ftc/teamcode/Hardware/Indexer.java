@@ -31,6 +31,9 @@ public class Indexer {
     public void TakeOut(){
         Intake.setPower(1);
     }
+    public void TakeOutBit(){
+        Intake.setPower(0.5);
+    }
     public void Stop(){
         Intake.setPower(0);
     }
@@ -44,8 +47,8 @@ public class Indexer {
         IndexerR.setPosition(0.395);
     }
     public void PickPose3(){
-        IndexerL.setPosition(0.76);
-        IndexerR.setPosition(0.76);
+        IndexerL.setPosition(0.785);
+        IndexerR.setPosition(0.785);
     }
     public void OuttakePose1(){
         IndexerL.setPosition(0.21);
@@ -56,8 +59,8 @@ public class Indexer {
         IndexerR.setPosition(0.58);
     }
     public void OuttakePose3(){
-        IndexerL.setPosition(0.96);
-        IndexerR.setPosition(0.96);
+        IndexerL.setPosition(0.97);
+        IndexerR.setPosition(0.97);
     }
     public double IndexerGetPos(){
         return  IndexerR.getPosition();

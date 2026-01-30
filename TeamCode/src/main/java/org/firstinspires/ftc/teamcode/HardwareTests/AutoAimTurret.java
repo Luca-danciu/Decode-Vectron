@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.HardwareTests;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -12,7 +13,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
 
 import java.util.List;
-
+@Disabled
 @TeleOp(name = "AutoAim Turret PIDF (Ticks)", group = "Vision")
 public class AutoAimTurret extends OpMode {
 
@@ -44,6 +45,8 @@ public class AutoAimTurret extends OpMode {
     // ================= CONTROL =================
     private boolean targetVisible = false;
      int desiredTicks = 0;
+    private boolean returningToZero = false;
+    private boolean trackingEnabled = false;
 
     @Override
     public void init() {
@@ -83,6 +86,7 @@ public class AutoAimTurret extends OpMode {
     @Override
     public void loop() {
 
+        // --- CONTROL DRIVE ---
         double forward = -gamepad1.left_stick_y;
         double strafe = gamepad1.left_stick_x;
         double turn = gamepad1.right_stick_x;
@@ -92,66 +96,92 @@ public class AutoAimTurret extends OpMode {
         FrontRight.setPower((forward - (strafe + turn)) / denominator * 2);
         RearRight.setPower((forward + (strafe - turn)) / denominator * 2);
 
-        LLResult result = limelight.getLatestResult();
-        if (result == null || !result.isValid()) {
-            turret.setPower(0);
-            return;
+        // --- BUTON PENTRU RESET TURETA ---
+        if (gamepad1.a && !returningToZero && !trackingEnabled) { // apasă A pentru reset
+            returningToZero = true;
+            trackingEnabled = false;
+            integral = 0;
+            lastError = 0;
         }
 
-        List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
-        if (tags == null || tags.isEmpty()) {
-            turret.setPower(0);
-            return;
-        }
+        int currentPos = turret.getCurrentPosition();
 
-// caută ID-ul dorit
-        LLResultTypes.FiducialResult targetTag = null;
-        for (LLResultTypes.FiducialResult tag : tags) {
-            if (tag.getFiducialId() == TARGET_TAG_ID) {
-                targetTag = tag;
-                break;
+        // --- Mergi la poziția zero (0 ticks) ---
+        if (returningToZero) {
+            double powerToZero = pidf(0, currentPos);
+            turret.setPower(powerToZero);
+
+            // Dacă am ajuns aproape de zero
+            if (Math.abs(currentPos) < 10) { // toleranță 10 ticks
+                turret.setPower(0);
+                returningToZero = false;
+                trackingEnabled = true; // pornim tracking-ul după ce s-a resetat
             }
-            else {
-                telemetry.addData("Tag" , tag);
+            telemetry.addData("Turret Status", "Returning to zero");
+            telemetry.addData("Current Pos", currentPos);
+            telemetry.update();
+            return;
+        }
+
+        // --- AUTO AIM TRACKING ---
+        if (trackingEnabled) {
+            LLResult result = limelight.getLatestResult();
+            if (result == null || !result.isValid()) {
+                turret.setPower(0);
+                telemetry.addData("Status", "No tag detected");
+                telemetry.update();
+
+                return;
             }
+
+            List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
+            if (tags == null || tags.isEmpty()) {
+                turret.setPower(0);
+                telemetry.addData("Status", "No tags");
+                telemetry.update();
+
+                return;
+            }
+
+            LLResultTypes.FiducialResult targetTag = null;
+            for (LLResultTypes.FiducialResult tag : tags) {
+                if (tag.getFiducialId() == TARGET_TAG_ID) {
+                    targetTag = tag;
+                    break;
+                }
+            }
+
+            if (targetTag == null) {
+                turret.setPower(0);
+                telemetry.addData("Status", "Waiting for target tag");
+                telemetry.update();
+
+                return;
+            }
+
+            double tx = targetTag.getTargetXDegrees();
+
+            if (Math.abs(tx) < 1.0) {
+                turret.setPower(0);
+                return;
+            }
+
+            double kAim = 0.03;
+            double power = tx * kAim;
+            if (Math.abs(power) < 0.1) power = 0.1 * Math.signum(power);
+            power = Math.max(-1, Math.min(1, power));
+
+            // limite mecanice
+            if ((currentPos >= MAX_TICKS && power > 0) || (currentPos <= MIN_TICKS && power < 0)) power = 0;
+
+            turret.setPower(power);
+
+            telemetry.addData("Tracking Tag", TARGET_TAG_ID);
+            telemetry.addData("TX", tx);
+            telemetry.addData("Power", power);
+            telemetry.update();
+
         }
-
-        if (targetTag == null) {
-            turret.setPower(0);
-            telemetry.addData("Status", "Wait for TAG");
-            return;
-        }
-
-// ===== AUTO AIM =====
-        double tx = targetTag.getTargetXDegrees();
-
-        if (Math.abs(tx) < 1.0) {
-            turret.setPower(0);
-            return;
-        }
-
-        double kAim = 0.03;
-        double power = tx * kAim;
-
-        if (Math.abs(power) < 0.1) {
-            power = 0.1 * Math.signum(power);
-        }
-
-        power = Math.max(-0.6, Math.min(0.6, power));
-
-// limite mecanice
-        int pos = turret.getCurrentPosition();
-        if ((pos >= MAX_TICKS && power > 0) ||
-                (pos <= MIN_TICKS && power < 0)) {
-            power = 0;
-        }
-
-        turret.setPower(power);
-
-        telemetry.addData("Tracking Tag", TARGET_TAG_ID);
-        telemetry.addData("TX", tx);
-        telemetry.addData("Power", power);
-
         telemetry.update();
     }
 

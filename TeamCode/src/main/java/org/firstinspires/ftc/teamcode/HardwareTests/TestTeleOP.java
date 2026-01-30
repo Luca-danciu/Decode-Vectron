@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.HardwareTests;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -11,7 +12,7 @@ import org.firstinspires.ftc.teamcode.Hardware.Outtake;
 // ✅ IMPORTURI PENTRU PANELS
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.configurables.PanelsConfigurables;
-
+@Disabled
 @TeleOp(name = "Shooter RPM PIDF TeleOp")
 @Configurable // ✅ OBLIGATORIU PENTRU PANELS
 public class TestTeleOP extends OpMode {

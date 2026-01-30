@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.OpModes;
+package org.firstinspires.ftc.teamcode.HardwareTests;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.Hardware.IMUIndexer;
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
 import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 import org.firstinspires.ftc.teamcode.Hardware.Outtake;
-import org.firstinspires.ftc.teamcode.Hardware.WebcamTureta;
+
 @Disabled
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "alex")

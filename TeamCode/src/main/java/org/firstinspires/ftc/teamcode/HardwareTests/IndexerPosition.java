@@ -6,9 +6,9 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
+@Disabled
 @TeleOp
 @Configurable
-@Disabled
 
 public class IndexerPosition extends OpMode {
     public static double p=0;

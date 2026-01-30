@@ -1,4 +1,5 @@
-package org.firstinspires.ftc.teamcode.OpModes;
+package org.firstinspires.ftc.teamcode.HardwareTests;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -7,6 +8,7 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -19,11 +21,11 @@ import org.firstinspires.ftc.teamcode.Hardware.ColorSensorIndexer;
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
 import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 import org.firstinspires.ftc.teamcode.Hardware.Outtake;
-import org.firstinspires.ftc.teamcode.Hardware.WebcamTureta;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
+@Disabled
 @Autonomous
-public class AutoBlueSideTower extends OpMode {
+public class ABNew extends OpMode {
     int stateThrow = 99;
     int stateCollect = 99;
     boolean ballsRemoved;
@@ -46,7 +48,7 @@ public class AutoBlueSideTower extends OpMode {
     private double dt = 0.02;
 
     private int lastEncoder = 0;
-    public static double targetRPM1 = 3500;
+    public static double targetRPM1 = 3600;
     public static double targetRPM = 0;
     double measuredRPM;
     public static double pidTargetRPM = 0;
@@ -74,7 +76,7 @@ public class AutoBlueSideTower extends OpMode {
     public Outtake outtake = new Outtake();
     public Limelight limelight = new Limelight();
 
-//    public WebcamTureta webcam = new WebcamTureta();
+    //    public WebcamTureta webcam = new WebcamTureta();
     public ColorSensorIndexer colorSensorIndexer = new ColorSensorIndexer();
     public DistanceSensor distanceSensor;
 
@@ -93,16 +95,16 @@ public class AutoBlueSideTower extends OpMode {
     public double power = 0.80;
 
     private int pathState;
-    private final Pose startPose = new Pose(33, 133, Math.toRadians(90)); // Start Pose of our robot.
+    private final Pose startPose = new Pose(33, 133.5, Math.toRadians(90)); // Start Pose of our robot.
     private final Pose scorePosePreload = new Pose(55, 84, Math.toRadians(180));
     private final Pose scorePose123 = new Pose(50, 90, Math.toRadians(225));
     private final Pose pickup1Pose = new Pose(23, 84, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
     private final Pose openGate1 = new Pose(25 , 80, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose openGate2 = new Pose(17 , 75, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
+    private final Pose openGate2 = new Pose(15 , 75, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
 
     private final Pose pickup2PosePrepare = new Pose(44, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
     private final Pose pickup2Pose = new Pose(15, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose pickup2PoseReverse = new Pose(25, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose pickup2PoseReverse = new Pose(20, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
 
     private final Pose pickup3PosePrepare = new Pose(42,38, Math.toRadians(180));
     private final Pose pickup3Pose = new Pose(16.5 , 37, Math.toRadians(180));
@@ -118,18 +120,18 @@ public class AutoBlueSideTower extends OpMode {
                 .addPath(new BezierLine(scorePosePreload, pickup1Pose))
                 .setLinearHeadingInterpolation(scorePosePreload.getHeading(), pickup1Pose.getHeading())
 
-                .addPath(new BezierLine(pickup1Pose, openGate1))
-                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), openGate1.getHeading())
-
-                .addPath(new BezierLine(openGate1, openGate2))
-                .setLinearHeadingInterpolation(openGate1.getHeading(), openGate2.getHeading())
+//                .addPath(new BezierLine(pickup1Pose, openGate1))
+//                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), openGate1.getHeading())
+//
+//                .addPath(new BezierLine(openGate1, openGate2))
+//                .setLinearHeadingInterpolation(openGate1.getHeading(), openGate2.getHeading())
                 .build();
 
         scorePickup1 = follower.pathBuilder()
 //                .addPath(new BezierLine(pickup1Pose, openGate))
 //                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), openGate.getHeading())
-                .addPath(new BezierLine(openGate2, scorePose123))
-                .setLinearHeadingInterpolation(openGate2.getHeading(), scorePose123.getHeading())
+                .addPath(new BezierCurve(pickup1Pose , openGate1 , openGate2 , scorePose123))
+                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), scorePose123.getHeading())
                 .build();
 
         grabPickup2Prepare = follower.pathBuilder()
@@ -435,63 +437,63 @@ public class AutoBlueSideTower extends OpMode {
         switch (stateThrow) {
             // -----------------PRIMA BILA -----------------
             case 0:
-                    timerToSee.reset();
-                    targetRPM = targetRPM1;
-                    if (greenBallPickedAt.equals(pp1)) {
-                            String caseUsed = detectedCase;
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose3();
-                                    break;
-                                default:
-                                    indexer.OuttakePose1();
-                                    break;
-                            }
-                        }
-                    if (greenBallPickedAt.equals(pp2)) {
-                            String caseUsed = detectedCase;
+                timerToSee.reset();
+                targetRPM = targetRPM1;
+                if (greenBallPickedAt.equals(pp1)) {
+                    String caseUsed = detectedCase;
+                    switch (caseUsed) {
+                        case "GPP":
+                            indexer.OuttakePose2();
+                            break;
+                        case "PGP":
+                            indexer.OuttakePose3();
+                            break;
+                        case "PPG":
+                            indexer.OuttakePose3();
+                            break;
+                        default:
+                            indexer.OuttakePose1();
+                            break;
+                    }
+                }
+                if (greenBallPickedAt.equals(pp2)) {
+                    String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose2();
-                                    break;
-                                default:
-                                    indexer.OuttakePose1();
-                                    break;
-                            }
-                        }
-                    if (greenBallPickedAt.equals(pp3)) {
-                            String caseUsed = detectedCase;
+                    switch (caseUsed) {
+                        case "GPP":
+                            indexer.OuttakePose3();
+                            break;
+                        case "PGP":
+                            indexer.OuttakePose2();
+                            break;
+                        case "PPG":
+                            indexer.OuttakePose2();
+                            break;
+                        default:
+                            indexer.OuttakePose1();
+                            break;
+                    }
+                }
+                if (greenBallPickedAt.equals(pp3)) {
+                    String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose2();
-                                    break;
-                                default:
-                                    indexer.OuttakePose1();
-                                    break;
-                            }
-                        }
-                    throwTimer.reset();
-                    stateThrow = 1;
+                    switch (caseUsed) {
+                        case "GPP":
+                            indexer.OuttakePose1();
+                            break;
+                        case "PGP":
+                            indexer.OuttakePose2();
+                            break;
+                        case "PPG":
+                            indexer.OuttakePose2();
+                            break;
+                        default:
+                            indexer.OuttakePose1();
+                            break;
+                    }
+                }
+                throwTimer.reset();
+                stateThrow = 1;
 
 
                 break;
@@ -514,62 +516,62 @@ public class AutoBlueSideTower extends OpMode {
             case 3:
                 if (throwTimer.milliseconds() > 200) {
 
-                        if (greenBallPickedAt.equals(pp1)) {
-                            String caseUsed = detectedCase;
+                    if (greenBallPickedAt.equals(pp1)) {
+                        String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose1();
-                                    break;
-                                default:
-                                    indexer.OuttakePose2();
-                                    break;
-                            }
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose1();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose2();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose1();
+                                break;
+                            default:
+                                indexer.OuttakePose2();
+                                break;
                         }
-                        if (greenBallPickedAt.equals(pp2)) {
-                            String caseUsed = detectedCase;
+                    }
+                    if (greenBallPickedAt.equals(pp2)) {
+                        String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose1();
-                                    break;
-                                default:
-                                    indexer.OuttakePose2();
-                                    break;
-                            }
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose2();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose3();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose1();
+                                break;
+                            default:
+                                indexer.OuttakePose2();
+                                break;
                         }
-                        if (greenBallPickedAt.equals(pp3)) {
-                            String caseUsed = detectedCase;
+                    }
+                    if (greenBallPickedAt.equals(pp3)) {
+                        String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose3();
-                                    break;
-                                default:
-                                    indexer.OuttakePose2();
-                                    break;
-                            }
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose2();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose1();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose3();
+                                break;
+                            default:
+                                indexer.OuttakePose2();
+                                break;
                         }
-                        throwTimer.reset();
-                        stateThrow = 4;
+                    }
+                    throwTimer.reset();
+                    stateThrow = 4;
 
                 }
                 break;
@@ -591,62 +593,62 @@ public class AutoBlueSideTower extends OpMode {
             case 6:
                 if (throwTimer.milliseconds() > 200) {
 
-                        if (greenBallPickedAt.equals(pp1)) {
-                            String caseUsed = detectedCase;
+                    if (greenBallPickedAt.equals(pp1)) {
+                        String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose2();
-                                    break;
-                                default:
-                                    indexer.OuttakePose3();
-                                    break;
-                            }
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose3();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose1();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose2();
+                                break;
+                            default:
+                                indexer.OuttakePose3();
+                                break;
                         }
-                        if (greenBallPickedAt.equals(pp2)) {
-                            String caseUsed = detectedCase;
+                    }
+                    if (greenBallPickedAt.equals(pp2)) {
+                        String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose3();
-                                    break;
-                                default:
-                                    indexer.OuttakePose3();
-                                    break;
-                            }
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose1();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose1();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose3();
+                                break;
+                            default:
+                                indexer.OuttakePose3();
+                                break;
                         }
-                        if (greenBallPickedAt.equals(pp3)) {
-                            String caseUsed = detectedCase;
+                    }
+                    if (greenBallPickedAt.equals(pp3)) {
+                        String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose1();
-                                    break;
-                                default:
-                                    indexer.OuttakePose3();
-                                    break;
-                            }
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose3();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose3();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose1();
+                                break;
+                            default:
+                                indexer.OuttakePose3();
+                                break;
                         }
-                        throwTimer.reset();
-                        stateThrow = 7;
+                    }
+                    throwTimer.reset();
+                    stateThrow = 7;
 
                 }
                 break;
@@ -872,3 +874,4 @@ public class AutoBlueSideTower extends OpMode {
         return Math.max(min, Math.min(max, val));
     }
 }
+

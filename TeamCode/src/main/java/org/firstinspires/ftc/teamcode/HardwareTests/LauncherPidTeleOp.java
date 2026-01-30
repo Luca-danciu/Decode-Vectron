@@ -6,9 +6,9 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-@TeleOp(name = "Launcher PID TeleOp")
 @Disabled
+@TeleOp(name = "Launcher PID TeleOp")
+
 
 @Configurable
 public class LauncherPidTeleOp extends OpMode {

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpModes;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
@@ -45,7 +46,7 @@ public class AutoBlueSideSmallTriangle extends OpMode {
     private double dt = 0.02;
 
     private int lastEncoder = 0;
-    public static double targetRPM1 = 0;
+    public static double targetRPM1 = 4900;
     public static double targetRPM = 0;
     double measuredRPM;
     public static double pidTargetRPM = 0;
@@ -91,75 +92,154 @@ public class AutoBlueSideSmallTriangle extends OpMode {
     String tag;
 
     private int pathState;
-    private final Pose startPose = new Pose(56, 8, Math.toRadians(90)); // Start Pose of our robot.
-    private final Pose scorePosePreload = new Pose(31, 10, Math.toRadians(90));
-    private final Pose scorePose123 = new Pose(50, 90, Math.toRadians(225));
-    private final Pose pickup1Pose = new Pose(18, 84, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose pickup2PosePrepare = new Pose(44, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose pickup2Pose = new Pose(15, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose pickup3PosePrepare = new Pose(42,38, Math.toRadians(180));
-    private final Pose pickup3Pose = new Pose(15 , 38, Math.toRadians(180));
-    private final Pose park = new Pose(35 , 84, Math.toRadians(180));
+    private final Pose startPose = new Pose(57, 9, Math.toRadians(90)); // Start Pose of our robot.
+    private final Pose scorePose12 = new Pose(42, 14, Math.toRadians(180));
+    private final Pose scorePosePreload = new Pose(106, 16, Math.toRadians(180));
+    private final Pose pickup1PosePrepare = new Pose(44, 35, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose pickup1Pose = new Pose(17, 35, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose pickup2PosePrepare = new Pose(14,14, Math.toRadians(180));
+    private final Pose pickup2Pose = new Pose(13 , 10, Math.toRadians(230));
+    private final Pose park = new Pose(37 , 11, Math.toRadians(90));
     private Path scorePreload;
-    private PathChain grabPickup1, scorePickup1, grabPickup2Prepare , grabPickup2 , scorePickup2, grabPickup3Prepare,grabPickup3, scorePickup3 , parkare;
-
+    public PathChain pickpose1;
+    public PathChain score1;
+    public PathChain pickPose2;
+    public PathChain score2;
+    public PathChain Park;
     public void buildPaths() {
-        scorePreload = new Path(new BezierLine(startPose, scorePosePreload));
-        scorePreload.setLinearHeadingInterpolation(startPose.getHeading(), scorePosePreload.getHeading());
-
-        grabPickup1 = follower.pathBuilder()
-                .addPath(new BezierLine(scorePosePreload, pickup1Pose))
-                .setLinearHeadingInterpolation(scorePosePreload.getHeading(), pickup1Pose.getHeading())
+        pickpose1 = follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(57.000, 9.000),
+                                new Pose(9.000, 23)
+//                                new Pose(12.500, 8.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(-90))
+                .addPath(new BezierLine( new Pose( 9 , 23) , new Pose(9 ,10)))
                 .build();
 
-        scorePickup1 = follower.pathBuilder()
-                .addPath(new BezierLine(pickup1Pose, scorePose123))
-                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), scorePose123.getHeading())
+        score1 = follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(9, 10),
+                                new Pose(34.000, 19.000),
+                                new Pose(59.000, 12.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(-90), Math.toRadians(90))
+
                 .build();
 
-        grabPickup2Prepare = follower.pathBuilder()
-                .addPath(new BezierLine(scorePose123, pickup2PosePrepare))
-                .setLinearHeadingInterpolation(scorePose123.getHeading(), pickup2PosePrepare.getHeading())
+        pickPose2 = follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(59.000, 12.000),
+                                new Pose(75.000, 38.000),
+                                new Pose(18.000, 35.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+
                 .build();
 
-        grabPickup2 = follower.pathBuilder()
-                .addPath(new BezierLine(pickup2PosePrepare, pickup2Pose))
-                .setLinearHeadingInterpolation(pickup2PosePrepare.getHeading(), pickup2Pose.getHeading())
+        score2 = follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(10.000, 35.000),
+                                new Pose(29.000, 14.000),
+                                new Pose(59.000, 12.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
+
                 .build();
 
-        scorePickup2 = follower.pathBuilder()
-                .addPath(new BezierLine(pickup2Pose, scorePose123))
-                .setLinearHeadingInterpolation(pickup2Pose.getHeading(), scorePose123.getHeading())
-                .build();
+        Park = follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(59.000, 12.000),
 
-        grabPickup3Prepare = follower.pathBuilder()
-                .addPath(new BezierLine(scorePose123, pickup3PosePrepare))
-                .setLinearHeadingInterpolation(scorePose123.getHeading(), pickup3PosePrepare.getHeading())
-                .build();
+                                new Pose(30.000, 12.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
 
-        grabPickup3 = follower.pathBuilder()
-                .addPath(new BezierLine(pickup3PosePrepare, pickup3Pose))
-                .setLinearHeadingInterpolation(pickup3PosePrepare.getHeading(), pickup3Pose.getHeading())
-                .build();
-
-        scorePickup3 = follower.pathBuilder()
-                .addPath(new BezierLine(pickup3Pose, scorePose123))
-                .setLinearHeadingInterpolation(pickup3Pose.getHeading(), scorePose123.getHeading())
-                .build();
-
-        parkare = follower.pathBuilder()
-                .addPath(new BezierLine(scorePose123, park))
-                .setLinearHeadingInterpolation(scorePose123.getHeading(), park.getHeading())
                 .build();
     }
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
                 indexer.KeepInside();
-                follower.followPath(scorePreload);
-                actionTimer.resetTimer();
-                targetPosition = -700;
-                setPathState(1);
+                    tag = limelight.getAprilTag();
+                    greenBallPickedAt = "PickPose1";
+                    if (tag != null &&
+                            (tag.equals("GPP") || tag.equals("PGP") || tag.equals("PPG"))) {
+
+                        detectedCase = tag;
+                        targetPosition = 100;
+                        actionTimer.resetTimer();
+                        outtake.Angle.setPosition(0.85);
+                        targetRPM = targetRPM1;
+                        stateThrow = 0;
+                        setPathState(1);
+                    }
+
+                break;
+
+            case 1:
+                if (stateThrow == 99) {
+                    follower.followPath(pickpose1 , 0.8 , true);
+                    indexer.Colect();
+                    actionTimer.resetTimer();
+                    greenBallPickedAt = "PickPose2";
+                    pathTimer.resetTimer();
+                    stateCollect = 0;
+                    setPathState(2);
+                }
+                break;
+            case 2:
+
+                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)) {
+                    indexer.KeepInside();
+                    follower.followPath(score1);
+                    limelight.limelight.stop();
+                    targetRPM = targetRPM1;
+                    setPathState(3);
+                }
+                break;
+            case 3:
+                if (!follower.isBusy()){
+                    stateThrow = 0;
+                    setPathState(4);
+                }
+                break;
+            case 4:
+                if (stateThrow == 99){
+                    follower.followPath(pickPose2  , true);
+                    indexer.Colect();
+                    greenBallPickedAt = "PickPose1";
+                    pathTimer.resetTimer();
+                    stateCollect = 0;
+                    setPathState(5);
+                }
+                break;
+
+            case 5:
+
+                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)) {
+                    indexer.KeepInside();
+                    follower.followPath(score2);
+                    limelight.limelight.stop();
+                    targetRPM = targetRPM1;
+                    setPathState(6);
+                }
+                break;
+            case 6:
+                if (!follower.isBusy()){
+                    stateThrow = 0;
+                    setPathState(7);
+                }
+                break;
+            case 7:
+                if (stateThrow == 99){
+                    follower.followPath(Park ,0.6 , true);
+                    indexer.Stop();
+                    targetRPM = 0;
+                    targetPosition = 0;
+                    pathTimer.resetTimer();
+                    setPathState(8);
+                }
                 break;
 
         }
@@ -173,56 +253,62 @@ public class AutoBlueSideSmallTriangle extends OpMode {
     @Override
     public void loop() {
 
-//        pidTargetRPM = Math.max(0, Math.min(12000, pidTargetRPM));
-//        if (pidTargetRPM <= 50) {
-//            launcher.setPower(0);
-//            integral = 0;
-//            previousError = 0;
-//        }else {
-//            double currentTime = timer.seconds();
-//
-//            if (currentTime >= dt) {
-//
-//                int currentEncoder = launcher.getCurrentPosition();
-//                int delta = currentEncoder - lastEncoder;
-//
-//                measuredRPM = (delta * 60.0) / (CPR * currentTime);
-//
-//                double error = pidTargetRPM - measuredRPM;
-//
-//                if (Math.abs(error) < 40) error = 0;
-//
-//                integral += error * currentTime;
-//                integral = Math.max(-5000, Math.min(5000, integral));
-//
-//                double derivative = (error - previousError) / Math.max(currentTime, 0.01);
-//
-//                double output =
-//                        kP * error +
-//                                kI * integral +
-//                                kD * derivative +
-//                                kF * targetRPM;
-//
-//                output = Math.max(0.0, Math.min(1.0, output));
-//
-//                launcher.setPower(output);
-//
-//                previousError = error;
-//                lastEncoder = currentEncoder;
-//                timer.reset();
-//
-//            }
-//        }
+        targetRPM = Math.max(0, Math.min(12000, targetRPM));
+
+        // ✅ STOP REAL LA 0 RPM
+        if (targetRPM <= 50) {
+            launcher.setPower(0);
+            integral = 0;
+            previousError = 0;
+
+
+        }
+
+        double currentTime = timer.seconds();
+        if (currentTime >= dt) {
+
+            int currentEncoder = launcher.getCurrentPosition();
+            int delta = currentEncoder - lastEncoder;
+
+            measuredRPM = (delta * 60.0) / (CPR * currentTime);
+
+            double error = targetRPM - measuredRPM;
+
+            // ✅ DEADZONE ANTI TREPIDAT
+            if (Math.abs(error) < 40) error = 0;
+
+            // ✅ INTEGRAL CU LIMITARE (ANTI WIND-UP)
+            integral += error * currentTime;
+            integral = Math.max(-5000, Math.min(5000, integral));
+
+            // ✅ DERIVATĂ FILTRATĂ
+            double derivative = (error - previousError) / Math.max(currentTime, 0.01);
+
+            double output =
+                    kP * error +
+                            kI * integral +
+                            kD * derivative +
+                            kF * targetRPM;
+
+            output = Math.max(0.0, Math.min(1.0, output));
+
+            launcher.setPower(output);
+
+            previousError = error;
+            lastEncoder = currentEncoder;
+            timer.reset();
+
+        }
+
         distance = distanceSensor.getDistance(DistanceUnit.MM);
         autonomousPathUpdate();
         telemetry.addData("path state", pathState);
 
         switch (stateThrow) {
-            // ----------------- PRIMA BILA -----------------
+            // -----------------PRIMA BILA -----------------
             case 0:
                 timerToSee.reset();
-                launcher.setPower(1);
-                outtake.Angle.setPosition(0.65);
+                targetRPM = targetRPM1;
                 if (greenBallPickedAt.equals(pp1)) {
                     String caseUsed = detectedCase;
                     switch (caseUsed) {
@@ -278,18 +364,17 @@ public class AutoBlueSideSmallTriangle extends OpMode {
                 }
                 throwTimer.reset();
                 stateThrow = 1;
+
+
                 break;
-
             case 1:
-
-                if (throwTimer.milliseconds() > 1000) {
+//                    if (throwTimer.milliseconds() > 1200) {
+                if (measuredRPM < (targetRPM + 150) && measuredRPM > (targetRPM -50) && throwTimer.milliseconds() > 700) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 2;
                 }
-
                 break;
-
             case 2:
                 if (throwTimer.milliseconds() > 200) {
                     indexer.Down();
@@ -297,10 +382,10 @@ public class AutoBlueSideSmallTriangle extends OpMode {
                     stateThrow = 3;
                 }
                 break;
-
             // ----------------- A DOUA BILA -----------------
             case 3:
                 if (throwTimer.milliseconds() > 200) {
+
                     if (greenBallPickedAt.equals(pp1)) {
                         String caseUsed = detectedCase;
 
@@ -357,17 +442,15 @@ public class AutoBlueSideSmallTriangle extends OpMode {
                     }
                     throwTimer.reset();
                     stateThrow = 4;
+
                 }
-
                 break;
-
             case 4:
-                if (throwTimer.milliseconds() > 500) {
+                if ((measuredRPM < (targetRPM + 150)) && measuredRPM > (targetRPM -50) && throwTimer.milliseconds() > 500) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 5;
                 }
-
                 break;
             case 5:
                 if (throwTimer.milliseconds() > 200) {
@@ -376,10 +459,10 @@ public class AutoBlueSideSmallTriangle extends OpMode {
                     stateThrow = 6;
                 }
                 break;
-
             // ----------------- A TREIA BILA -----------------
             case 6:
                 if (throwTimer.milliseconds() > 200) {
+
                     if (greenBallPickedAt.equals(pp1)) {
                         String caseUsed = detectedCase;
 
@@ -439,16 +522,13 @@ public class AutoBlueSideSmallTriangle extends OpMode {
 
                 }
                 break;
-
             case 7:
-                if ( throwTimer.milliseconds() > 500) {
+                if (measuredRPM < targetRPM + 150 && measuredRPM > targetRPM -50 && throwTimer.milliseconds() > 500) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 8;
                 }
-
                 break;
-
             case 8:
                 if (throwTimer.milliseconds() > 200) {
                     indexer.Down();
@@ -457,12 +537,10 @@ public class AutoBlueSideSmallTriangle extends OpMode {
                 break;
             case 9:
                 if (throwTimer.milliseconds() > 400) {
-                    launcher.setPower(0);
-                    indexer.Down();
-                    purplecount = 0;
-                    greencount = 0;
                     stateThrow = 99;
-                    greenBallPickedAt = "Nicio bila verde preluata";
+                    targetRPM = 0;
+                    indexer.Down();
+                    Time = timerToSee.seconds();
                 }
                 break;
         }
@@ -565,8 +643,10 @@ public class AutoBlueSideSmallTriangle extends OpMode {
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.addData("throe" , stateThrow);
         telemetry.update();
     }
+
 
     @Override
     public void init() {
@@ -597,7 +677,7 @@ public class AutoBlueSideSmallTriangle extends OpMode {
         colorSensorIndexer.initcolorsensor(hardwareMap);
         distanceSensor = hardwareMap.get(DistanceSensor.class, "SenzorIntakeCH");
         indexer.PickPose1();
-        outtake.Angle.setPosition(0.53);
+        outtake.Angle.setPosition(0.76);
         indexer.Down();
 
         pathTimer = new Timer();
