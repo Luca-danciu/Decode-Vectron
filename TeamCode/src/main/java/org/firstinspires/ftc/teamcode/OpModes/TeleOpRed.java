@@ -3,7 +3,11 @@ package org.firstinspires.ftc.teamcode.OpModes;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.HeadingInterpolator;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathChain;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -16,6 +20,7 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.Hardware.Ascent;
 import org.firstinspires.ftc.teamcode.Hardware.ColorSensorIndexer;
 import org.firstinspires.ftc.teamcode.Hardware.Drivetrain;
 import org.firstinspires.ftc.teamcode.Hardware.IMUIndexer;
@@ -25,6 +30,7 @@ import org.firstinspires.ftc.teamcode.Hardware.Outtake;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 @Configurable
 @TeleOp
@@ -40,6 +46,7 @@ public class TeleOpRed extends LinearOpMode {
     public ColorSensorIndexer colorSensorIndexer = new ColorSensorIndexer();
     public Limelight limelight = new Limelight();
     private Follower follower;
+    public Ascent ascent = new Ascent();
 
     DigitalChannel ledRedD;
     DigitalChannel ledGreenD;
@@ -56,8 +63,8 @@ public class TeleOpRed extends LinearOpMode {
     int purplecount = 0;
     int greencount = 0;
     double Time = 0;
-    public int towerX = 133;
-    public int towerY = 140;
+    public int towerX = 129;
+    public int towerY = 130;
 
 
     //Tureta
@@ -77,7 +84,7 @@ public class TeleOpRed extends LinearOpMode {
     public static double kFT = 0.05;
     public static final int MAX_TICKST = (int)(180 * TICKS_PER_DEGREE);
     public static final int MIN_TICKST = -MAX_TICKST;
-    private final Pose START_POSE = new Pose(110, 84, Math.toRadians(0)); // Exemplu: poziție start + heading 90° (spre nord)
+    private final Pose START_POSE = new Pose(86, 117, Math.toRadians(0)); // Exemplu: poziție start + heading 90° (spre nord)
 
 
     static final double TICKS_PER_DEGREET = 6.533;
@@ -140,15 +147,27 @@ public class TeleOpRed extends LinearOpMode {
     public static double targetR2 = 3600;
     public static double targetR3 = 4200;
     public static double targetR4 = 4800;
-
+    double txOffset = 0.0;   // offset în grade
+    double offsetStep = 0.25;
     double measuredRPM = 0;
     boolean resumeFromLast = false;
     int turretHoldTicks = 0;
+
+
+    private boolean pathFinished = false;
+    private boolean automatedDrive;
+    private Supplier<PathChain> parcare;
+    public static double DR= 1;
+    public static double SR = 1;
+    boolean ridic = false;
+
 
     public void runOpMode() throws InterruptedException {
 
         int stateThrow = 0;
         int stateCollect = 0;
+        int statePark = 0;
+
         int stateTureta = 0;
         ElapsedTime statetureta = new ElapsedTime();
 
@@ -161,7 +180,7 @@ public class TeleOpRed extends LinearOpMode {
         launcher = hardwareMap.get(DcMotor.class, "Launcher");
         DcMotorEx turret = hardwareMap.get(DcMotorEx.class, "Tureta");
 
-        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         turret.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -192,11 +211,16 @@ public class TeleOpRed extends LinearOpMode {
         imuIndexer.init(hardwareMap);
         limelight.limelightinit(hardwareMap);
         drivetrain.drivetraininit(hardwareMap);
+        ascent.ascentinit(hardwareMap);
 
         timerToSee.reset();
 
         follower = Constants.createFollower(hardwareMap);
         follower.setPose( START_POSE );
+        parcare = () -> follower.pathBuilder() //Lazy Curve Generation
+                .addPath(new Path(new BezierLine(follower::getPose, new Pose(33, 33.4))))
+                .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(follower::getHeading, Math.toRadians(45), 0.8))
+                .build();
 
         waitForStart();
 
@@ -206,28 +230,43 @@ public class TeleOpRed extends LinearOpMode {
         DpadPressed.reset();
         statetureta.reset();
         targetRPM = 0;
+        ascent.Prins();
+
 
         while (opModeIsActive() && !isStopRequested()) {
 
             follower.update();
-            if (Math.abs(gamepad1.left_stick_y) < 0.05 &&
-                    Math.abs(gamepad1.left_stick_x) < 0.05 &&
-                    Math.abs(gamepad1.right_stick_x) < 0.05 &&
-                    Math.abs(gamepad1.left_stick_y) > -0.05 &&
-                    Math.abs(gamepad1.left_stick_x) > -0.05 &&
-                    Math.abs(gamepad1.right_stick_x) > -0.05) {
-
-                drivetrain.activeBrake();
-            } else {
-                drivetrain.drive(-gamepad1.left_stick_y,
-                        gamepad1.left_stick_x,
-                        gamepad1.right_stick_x);
+            if (gamepad1.cross && !automatedDrive) {
+                follower.followPath(parcare.get());
+                automatedDrive = true;
+                pathFinished = false;
             }
+            if (!automatedDrive) {
+                if (Math.abs(gamepad1.left_stick_y) < 0.05 &&
+                        Math.abs(gamepad1.left_stick_x) < 0.05 &&
+                        Math.abs(gamepad1.right_stick_x) < 0.05 &&
+                        Math.abs(gamepad1.left_stick_y) > -0.05 &&
+                        Math.abs(gamepad1.left_stick_x) > -0.05 &&
+                        Math.abs(gamepad1.right_stick_x) > -0.05) {
 
-//            drivetrain.drive(-gamepad1.left_stick_y,
-//                    gamepad1.left_stick_x,
-//                    gamepad1.right_stick_x
-//            );
+                    drivetrain.activeBrake();
+                } else {
+                    drivetrain.drive(-gamepad1.left_stick_y,
+                            gamepad1.left_stick_x,
+                            gamepad1.right_stick_x);
+                }
+            }
+            if (automatedDrive && !follower.isBusy() && !pathFinished) {
+                pathFinished = true;
+
+                // Opreste complet robotul
+                drivetrain.drive(0, 0, 0);
+                drivetrain.activeBrake();
+            }
+            if (pathFinished && gamepad1.square) {
+                automatedDrive = false;
+                pathFinished = false;
+            }
 
             distance = distanceSensor.getDistance(DistanceUnit.MM);
             if (allBallsIn){
@@ -244,7 +283,7 @@ public class TeleOpRed extends LinearOpMode {
 
 //Tureta
             if (gamepad1.left_bumper){
-                follower.setPose( new Pose(9 , 9 ,Math.toRadians(0)));
+                follower.setPose( new Pose(105 , 140 ,Math.toRadians(0)));
             }
             switch (stateTureta){
                 case 0:
@@ -313,7 +352,7 @@ public class TeleOpRed extends LinearOpMode {
                         }
                         double tx = 0;
                         if (targetTag != null) {
-                            tx = targetTag.getTargetXDegrees();
+                            tx = targetTag.getTargetXDegrees() + txOffset;
                         }
                         if (Math.abs(tx) < 1.0 && !TuretaToZero) {
                             turret.setPower(0);
@@ -345,10 +384,57 @@ public class TeleOpRed extends LinearOpMode {
                     }
                     break;
             }
-
+//            switch (statePark){
+//                case 0:
+//                    if (gamepad1.dpad_left){
+//                        DpadPressed.reset();
+//                        statePark = 1;
+//
+//                    }
+//                    break;
+//                case 1:
+//                    if (gamepad1.dpad_left && DpadPressed.milliseconds() < 300){
+//                        ascent.Eliberat();
+//                        statePark = 2;
+//                    }
+//                    if (DpadPressed.milliseconds() > 300){
+//                        statePark = 0;
+//                    }
+//                    break;
+//                case 2:
+//                    if (gamepad1.dpad_up){
+//                        ascent.Ridicare(1,1);
+//                    }
+//                    if (gamepad1.dpad_down){
+//                        ascent.Ridicare(-1,-1);
+//                    }
+//                    else {
+//                        ascent.Ridicare(0,0);
+//                    }
+//            }
 
 //Detectie tureta ATTracking
+            if (gamepad1.dpad_up){
+                ascent.Eliberat();
+                ridic = true;
+            }
+            if (gamepad1.dpad_left){
+                ascent.Prins();
+            }
+            if (ridic){
+                targetPosition = 0;
+                targetRPM = 0;
+                indexer.Stop();
+                drivetrain.activeBrake();
 
+            }
+            if (gamepad1.dpad_down){
+                ascent.Ridicare(DR,SR);
+            }
+
+            else {
+                ascent.Ridicare(0,0);
+            }
             limelight.limelight.start();
 
             String tag = limelight.getAprilTag();
@@ -656,7 +742,7 @@ public class TeleOpRed extends LinearOpMode {
             switch (stateCollect) {
                 case 0: // PickPose1
                     indexer.PickPose1();
-                    if (distance <= 60) {
+                    if (distance <= 70) {
                         indexer.PickPose2();
                         collecttimer.reset();
                         ballsRemoved = false;
@@ -665,7 +751,7 @@ public class TeleOpRed extends LinearOpMode {
                     break;
 
                 case 1:
-                    if (distance <= 60 && collecttimer.milliseconds() > 600) {
+                    if (distance <= 70 && collecttimer.milliseconds() > 600) {
                         indexer.PickPose3();
                         collecttimer.reset();
                         stateCollect = 2;
@@ -673,7 +759,7 @@ public class TeleOpRed extends LinearOpMode {
                     break;
 
                 case 2: // PickPose3
-                    if (distance <= 60 && collecttimer.milliseconds() > 300) {
+                    if (distance <= 70 && collecttimer.milliseconds() > 300) {
                         collecttimer.reset();
                         indexer.OuttakePose1();
                         targetRPM =getTargetRPM;
@@ -707,7 +793,7 @@ public class TeleOpRed extends LinearOpMode {
                     indexer.KeepInside();
                     indexer.PickPose1();
                     detectedColor1 = colorSensorIndexer.getDetectedColor();
-                    if (distance <= 60) {
+                    if (distance <= 70) {
                         if (detectedColor1 == ColorSensorIndexer.DetectedColor.PURPLE) {
                             purplecount++;
                             indexer.PickPose2();
@@ -730,7 +816,7 @@ public class TeleOpRed extends LinearOpMode {
 
                 case 97: // PickPose2
                     detectedColor2 = colorSensorIndexer.getDetectedColor();
-                    if (distance <= 60 && collecttimer.milliseconds() > 600) {
+                    if (distance <= 70 && collecttimer.milliseconds() > 600) {
                         if (detectedColor2 == ColorSensorIndexer.DetectedColor.PURPLE) {
                             purplecount++;
                             collecttimer.reset();
@@ -754,7 +840,7 @@ public class TeleOpRed extends LinearOpMode {
 
                 case 98: // PickPose3
                     detectedColor3 = colorSensorIndexer.getDetectedColor();
-                    if (distance <= 60 && collecttimer.milliseconds() > 300) {
+                    if (distance <= 70 && collecttimer.milliseconds() > 300) {
                         if (detectedColor3 == ColorSensorIndexer.DetectedColor.PURPLE) {
                             purplecount++;
                             collecttimer.reset();
@@ -898,21 +984,21 @@ public class TeleOpRed extends LinearOpMode {
             }
 
 //Intake Role
-            if (gamepad1.left_trigger > 0) {
+            if (gamepad1.left_trigger > 0 && !ridic) {
                 indexer.KeepInside();
-            } else if (gamepad1.right_trigger > 0 ) {
+            } else if (gamepad1.right_trigger > 0 && !ridic) {
                 indexer.TakeOut();
-            }else if(TakeOUT){
+            }else if(TakeOUT && !ridic){
                 indexer.TakeOutBit();
-            }else if (TakeGreenBallOut.milliseconds() < 400) {
+            }else if (TakeGreenBallOut.milliseconds() < 400 && !ridic) {
                 indexer.TakeOut();
                 greencount = 1;
-            } else if (TakePurpleBallOut.milliseconds() < 400) {
+            } else if (TakePurpleBallOut.milliseconds() < 400 && !ridic) {
                 indexer.TakeOut();
                 purplecount = 2;
-            }else if (stopIntake && collecttimer.milliseconds() > 700) {
+            }else if ((stopIntake && collecttimer.milliseconds() > 700) || (ridic)) {
                 indexer.Stop();
-            } else {
+            } else if (!ridic){
                 indexer.Colect();
             }
 
@@ -924,14 +1010,12 @@ public class TeleOpRed extends LinearOpMode {
             }
 
 //Power Launcher
-            if (gamepad1.dpad_left && DpadPressed.milliseconds() > 200) {
-                DpadPressed.reset();
-                powerLauncher -= 0.1;
+            if (gamepad1.dpad_right) {
+                txOffset += offsetStep;
             }
-            if (gamepad1.dpad_right && DpadPressed.milliseconds() > 200) {
-                DpadPressed.reset();
-                powerLauncher += 0.1;
 
+            if (gamepad1.dpad_left) {
+                txOffset -= offsetStep;
             }
 
             telemetry.addData("Stare camera", limelight.limelight.isRunning() ? "Pornita" : "Oprita");
@@ -942,6 +1026,8 @@ public class TeleOpRed extends LinearOpMode {
             telemetry.addData("TimeThrow", Time);
             telemetry.addData("Bile mov", purplecount);
             telemetry.addData("Bile verzi", greencount);
+            telemetry.addData("TX offset", txOffset);
+
 //            telemetry.addData("TT", throwTimer.milliseconds());
             telemetry.addData("Tureta", stateTureta);
             telemetry.update();

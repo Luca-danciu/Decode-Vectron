@@ -7,6 +7,7 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -22,19 +23,22 @@ import org.firstinspires.ftc.teamcode.Hardware.Outtake;
 import org.firstinspires.ftc.teamcode.Hardware.WebcamTureta;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
+//@Disabled
 @Autonomous
-public class AutoBlueSideTower extends OpMode {
+public class AutoRedSideOpenAndTake extends OpMode {
     int stateThrow = 99;
     int stateCollect = 99;
     boolean ballsRemoved;
     ElapsedTime throwTimer;
     ElapsedTime collecttimer;
 
+    //
+
     //Set RPM Launcher
     private static final double CPR = 18.666;
-    public static double kP = 0.003;
+    public static double kP = 0.005;
     public static double kI = 0.000007;
-    public static double kD = 0.00007;
+    public static double kD = 0.0001;
     public static double kF = 0.0001468;
 
     private double integral = 0;
@@ -55,7 +59,7 @@ public class AutoBlueSideTower extends OpMode {
 
     //PIDF for turret
     private DcMotorEx turret;
-    public static final double TICKS_PER_DEGREE_Turret = 6.533;
+    public static final double TICKS_PER_DEGREE_Turret = 6.195;
     public static final int MAX_TICKS = (int)(180 * TICKS_PER_DEGREE_Turret);
 
     public static double P = 0.006;
@@ -67,6 +71,7 @@ public class AutoBlueSideTower extends OpMode {
     public static int targetPosition = 0;
 
     public DcMotor launcher;
+    boolean aruncareSelectiva = false;
 
     boolean detectionActive = true;
     String detectedCase = "NONE";
@@ -74,7 +79,7 @@ public class AutoBlueSideTower extends OpMode {
     public Outtake outtake = new Outtake();
     public Limelight limelight = new Limelight();
 
-//    public WebcamTureta webcam = new WebcamTureta();
+    //    public WebcamTureta webcam = new WebcamTureta();
     public ColorSensorIndexer colorSensorIndexer = new ColorSensorIndexer();
     public DistanceSensor distanceSensor;
 
@@ -90,289 +95,212 @@ public class AutoBlueSideTower extends OpMode {
     private Follower follower;
     private Timer pathTimer, actionTimer, nextTask , opmodeTimer;
     String tag;
-    public double power = 0.80;
 
     private int pathState;
-    private final Pose startPose = new Pose(33, 133, Math.toRadians(90)); // Start Pose of our robot.
-    private final Pose scorePosePreload = new Pose(55, 84, Math.toRadians(180));
-    private final Pose scorePose123 = new Pose(50, 90, Math.toRadians(225));
-    private final Pose scorePose2 = new Pose(57, 113, Math.toRadians(180));
+    private final Pose startPose = new Pose(112, 134, Math.toRadians(90)); // Start Pose of our robot.
 
-    private final Pose pickup1Pose = new Pose(23, 84, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose openGate1 = new Pose(25 , 75, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose openGate2 = new Pose(20 , 75, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-
-    private final Pose pickup2PosePrepare = new Pose(44, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose pickup2Pose = new Pose(17, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose pickup2PoseReverse = new Pose(25, 62, Math.toRadians(180));// Middle (Second Set) of Artifacts from the Spike Mark.
-
-    private final Pose pickup3PosePrepare = new Pose(43,38, Math.toRadians(180));
-    private final Pose pickup3Pose = new Pose(17 , 37, Math.toRadians(180));
-    private final Pose park = new Pose(35 , 84, Math.toRadians(180));
-    private Path scorePreload;
-    private PathChain grabPickup1, scorePickup1, grabPickup2Prepare , grabPickup2 , scorePickup2, grabPickup3Prepare,grabPickup3, scorePickup3 , parkare;
-
+    public PathChain scorepreload;
+    public PathChain firstPick;
+    public PathChain scoreFirst;
+    public PathChain pickScored;
+    public PathChain scoreScored;
+    public PathChain pickLast;
+    public PathChain scoreLast;
     public void buildPaths() {
-        scorePreload = new Path(new BezierLine(startPose, scorePosePreload));
-        scorePreload.setLinearHeadingInterpolation(startPose.getHeading(), scorePosePreload.getHeading());
 
-        grabPickup1 = follower.pathBuilder()
-                .addPath(new BezierLine(scorePosePreload, pickup1Pose))
-                .setLinearHeadingInterpolation(scorePosePreload.getHeading(), pickup1Pose.getHeading())
+        scorepreload = follower.pathBuilder().addPath(
+                    new BezierLine(
+                            new Pose(112.000, 134.000),
 
-                .addPath(new BezierLine(pickup1Pose, openGate1))
-                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), openGate1.getHeading())
+                            new Pose(112, 160)
+                    )
+            ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
 
-                .addPath(new BezierLine(openGate1, openGate2))
-                .setLinearHeadingInterpolation(openGate1.getHeading(), openGate2.getHeading())
-                .build();
+            .build();
 
-        scorePickup1 = follower.pathBuilder()
-//                .addPath(new BezierLine(pickup1Pose, openGate))
-//                .setLinearHeadingInterpolation(pickup1Pose.getHeading(), openGate.getHeading())
-                .addPath(new BezierLine(openGate2, scorePose123))
-                .setLinearHeadingInterpolation(openGate2.getHeading(), scorePose123.getHeading())
-                .build();
-
-        grabPickup2Prepare = follower.pathBuilder()
-                .addPath(new BezierLine(scorePose123, pickup2PosePrepare))
-                .setLinearHeadingInterpolation(scorePose123.getHeading(), pickup2PosePrepare.getHeading())
-                .build();
-
-        grabPickup2 = follower.pathBuilder()
-                .addPath(new BezierLine(pickup2PosePrepare, pickup2Pose))
-                .setLinearHeadingInterpolation(pickup2PosePrepare.getHeading(), pickup2Pose.getHeading())
-                .build();
-
-        scorePickup2 = follower.pathBuilder()
-                .addPath(new BezierCurve(pickup2Pose, pickup2PoseReverse , scorePose123))
-
-//                .addPath(new BezierLine(pickup2Pose, pickup2PoseReverse))
-//                .setLinearHeadingInterpolation(pickup2Pose.getHeading(), pickup2PoseReverse.getHeading())
-//                .addPath(new BezierLine(pickup2PoseReverse, scorePose123))
-                .setLinearHeadingInterpolation(pickup2Pose.getHeading(), scorePose123.getHeading())
-                .build();
-
-        grabPickup3Prepare = follower.pathBuilder()
-                .addPath(new BezierLine(scorePose123, pickup3PosePrepare))
-                .setLinearHeadingInterpolation(scorePose123.getHeading(), pickup3PosePrepare.getHeading())
-                .build();
-
-        grabPickup3 = follower.pathBuilder()
-                .addPath(new BezierLine(pickup3PosePrepare, pickup3Pose))
-                .setLinearHeadingInterpolation(pickup3PosePrepare.getHeading(), pickup3Pose.getHeading())
-                .build();
-
-        scorePickup3 = follower.pathBuilder()
-                .addPath(new BezierLine(pickup3Pose, scorePose2))
-                .setLinearHeadingInterpolation(pickup3Pose.getHeading(), scorePose2.getHeading())
-                .build();
-
-//        parkare = follower.pathBuilder()
-//                .addPath(new BezierLine(scorePose123, park))
-//                .setLinearHeadingInterpolation(scorePose123.getHeading(), park.getHeading())
+//        firstPick = follower.pathBuilder().addPath(
+//                        new BezierCurve(
+//                                new Pose(94.000, 93.000),
+//                                new Pose(70.000, 60.000),
+//                                new Pose(125, 60)
+//                        )
+//                ).setTangentHeadingInterpolation()
+//
+//                .build();
+//
+//        scoreFirst = follower.pathBuilder().addPath(
+//                        new BezierCurve(
+//                                new Pose(125, 60),
+//                                new Pose(96.000, 67.000),
+//                                new Pose(91.000, 89.000)
+//                        )
+//                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(-45))
+//
+//                .build();
+//
+//        pickScored = follower.pathBuilder().addPath(
+//                        new BezierCurve(
+//                                new Pose(91.000, 89.000),
+//                                new Pose(96.000, 48.000),
+//                                new Pose(129.000, 61.000)
+//                        )
+//
+//                ).setLinearHeadingInterpolation(Math.toRadians(-45), Math.toRadians(40))
+//
+//                .build();
+//
+//        scoreScored = follower.pathBuilder().addPath(
+//                        new BezierCurve(
+//                                new Pose(132.000, 59.000),
+//                                new Pose(88.000, 66.000),
+//                                new Pose(93.000, 84.000)
+//                        )
+//                ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(0))
+//
+//                .build();
+//
+//        pickLast = follower.pathBuilder().addPath(
+//                        new BezierLine(
+//                                new Pose(93.000, 84.000),
+//
+//                                new Pose(119.000, 84.000)
+//                        )
+//                ).setTangentHeadingInterpolation()
+//
+//                .build();
+//
+//        scoreLast = follower.pathBuilder().addPath(
+//                        new BezierLine(
+//                                new Pose(126.000, 84.000),
+//
+//                                new Pose(84.000, 110.000)
+//                        )
+//                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
+//
 //                .build();
     }
+
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-//                launcher.setPower(power);
-                indexer.KeepInside();
-                follower.followPath(scorePreload);
-                actionTimer.resetTimer();
-                targetPosition = -500;
                 setPathState(1);
+                actionTimer.resetTimer();
+//                targetPosition = -400;
+//                tag = "GPP";
                 break;
             case 1:
-                if (actionTimer.getElapsedTimeSeconds() > 0.05){
-                    tag = limelight.getAprilTag();
-                    greenBallPickedAt = "PickPose1";
-                    if (tag != null &&
-                            (tag.equals("GPP") || tag.equals("PGP") || tag.equals("PPG"))) {
-
-                        detectedCase = tag;
-//                        launcher.setPower(power);
-                        targetPosition = -300;
-                        actionTimer.resetTimer();
-                        outtake.Angle.setPosition(0.72);
-                        targetRPM = targetRPM1;
-                        setPathState(2);
-                    }
-                    if (!follower.isBusy() && tag == null){
-                        targetPosition = -800;
-                    }
+//                if (actionTimer.getElapsedTimeSeconds() > 15){
+////                    targetRPM = 4800;
+////                    indexer.KeepInside();
+//                }
+                if (actionTimer.getElapsedTimeSeconds() > 20) {
+//                    stateThrow = 0;
+                    setPathState(2);
                 }
                 break;
-
             case 2:
-                if (!follower.isBusy() && tag != null ){
-                    stateThrow = 0;
-                    setPathState(3);
-                    targetPosition = -300;
-                }
-                break;
-
-            case 3:
-                if (stateThrow == 99) {
-                    follower.followPath(grabPickup1 , 0.7 , true);
-                    indexer.Colect();
-                    greenBallPickedAt = "PickPose3";
-                    pathTimer.resetTimer();
-                    stateCollect = 0;
-                    setPathState(4);
-                }
-                break;
-            case 4:
-                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)){
-                    follower.followPath(scorePickup1);
-                    limelight.limelight.stop();
-//                    pathTimer.resetTimer();
-                    targetRPM = targetRPM1;
-
-                    targetPosition = -560;
-                    setPathState(5);
-                }
-                break;
-            case 5:
-//                if (pathTimer.getElapsedTimeSeconds() > 0.4) {
-//                    launcher.setPower(power);
+//                if (stateThrow == 99) {
+                    follower.followPath(scorepreload);
+//                    indexer.Stop();
+//                    targetRPM = 0;
+//                    targetPosition = 0;
+//                    setPathState(3);
 //                }
-                if (!follower.isBusy()){
-                    stateThrow = 0;
-                    setPathState(6);
-                }
                 break;
-            case 6:
-                if (stateThrow == 99){
-                    follower.followPath(grabPickup2Prepare , true);
-                    greenBallPickedAt = "PickPose2";
-                    pathTimer.resetTimer();
-                    indexer.Colect();
-                    stateCollect = 0;
-                    setPathState(7);
-                }
-                break;
-            case 7:
-                if (!follower.isBusy()){
-                    follower.followPath(grabPickup2 , 0.8 , true);
-                    setPathState(8);
-                }
-                break;
-            case 8:
-                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)) {
-                    follower.followPath(scorePickup2);
-//                    pathTimer.resetTimer();
-                    targetRPM = targetRPM1;
-                    targetPosition = -560;
-                    setPathState(9);
-                }
-                break;
-            case 9:
-//                if (pathTimer.getElapsedTimeSeconds() > 0.4) {
-//                    launcher.setPower(power);
-//                }
-                if (!follower.isBusy()){
-                    stateThrow = 0;
-                    setPathState(10);
-                }
-                break;
-            case 10:
-                if (stateThrow == 99){
-                    follower.followPath(grabPickup3Prepare , true);
-                    greenBallPickedAt = "PickPose1";
-                    pathTimer.resetTimer();
-                    indexer.Colect();
-                    stateCollect = 0;
-                    setPathState(11);
-                }
-                break;
-            case 11:
-                if (!follower.isBusy()){
-                    follower.followPath(grabPickup3 , 0.8 , true);
-                    setPathState(12);
-                }
-                break;
-            case 12:
-                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)) {
-//                    pathTimer.resetTimer();
-                    follower.followPath(scorePickup3);
-                    targetRPM = 3000;
-                    targetPosition = -170;
-                    setPathState(13);
-                }
-                break;
-            case 13:
-                if (!follower.isBusy()){
-                    stateThrow = 0;
-                    setPathState(14);
-                }
-            case 14:
-                if (stateThrow == 99 && !follower.isBusy()){
-                    targetPosition = 0;
-                    targetRPM=0;
-                    indexer.Stop();
-                    setPathState(15);
-                }
-                break;
-
-
 //            case 1:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(grabPickup1,0.6 ,true);
-//                    setPat
-//                  \
-//
-//
-//                  State(2);
+//                if (!follower.isBusy()) {
+//                    stateThrow = 0;
+//                    setPathState(2);
 //                }
 //                break;
 //            case 2:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(scorePickup1,true);
+//
+//                if (!follower.isBusy() && stateThrow == 99 ) {
+//                    indexer.Colect();
+//                    indexer.PickPose1();
+//                    follower.followPath(firstPick);
+//                    stateCollect = 0;
+//                    targetRPM = targetRPM1;
+//                    actionTimer.resetTimer();
 //                    setPathState(3);
 //                }
 //                break;
 //            case 3:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(grabPickup2Prepare);
+//                if (!follower.isBusy() && (stateCollect == 99 || actionTimer.getElapsedTimeSeconds() > 2)){
+//                    indexer.KeepInside();
+//                    targetPosition = 550;
+//                    follower.followPath(scoreFirst);
 //                    setPathState(4);
 //                }
 //                break;
 //            case 4:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(grabPickup2 , 0.6 , true);
+//                if (!follower.isBusy()){
+//                    stateThrow = 0;
 //                    setPathState(5);
 //                }
 //                break;
+//
 //            case 5:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(scorePickup2);
+//
+//                if (stateThrow == 99) {
+//                    follower.followPath(pickScored, 0.8 , true);
+//                    indexer.Colect();
+//                    stateCollect= 0;
+//                    limelight.limelight.stop();
+//                    targetRPM = targetRPM1;
+//                    actionTimer.resetTimer();
 //                    setPathState(6);
 //                }
 //                break;
 //            case 6:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(grabPickup3Prepare ,true );
+//                if (!follower.isBusy() && ( stateCollect == 99 || actionTimer.getElapsedTimeSeconds() > 7)){
+//                    follower.followPath(scoreScored);
+//                    targetPosition = 250;
+//                    indexer.KeepInside();
 //                    setPathState(7);
 //                }
 //                break;
 //            case 7:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(grabPickup3 , 0.6 , true);
+//                if (!follower.isBusy()){
+//                    stateThrow = 0;
+//                    pathTimer.resetTimer();
 //                    setPathState(8);
 //                }
 //                break;
 //            case 8:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(scorePickup3);
-//                    setPathState(9);
+//                if (stateThrow == 99){
+//                    stateCollect = 0;
+//                    indexer.Colect();
+//                    follower.followPath(pickLast);
+//                    targetRPM = targetRPM1;
+//                    setPathState( 9 );
+//                    actionTimer.resetTimer();
 //                }
 //                break;
 //            case 9:
-//                if(!follower.isBusy()) {
-//                    follower.followPath(parkare);
-//                    setPathState(-1);
+//                if (!follower.isBusy() && (stateCollect == 99 || actionTimer.getElapsedTimeSeconds() > 2)){
+//                    follower.followPath(scoreLast);
+//                    targetPosition = 200;
+//                    aruncareSelectiva = true;
+//                    tag = "GPP";
+//                    greenBallPickedAt = "PickPose3";
+//                    setPathState(10);
 //                }
+//                break;
+//            case 10:
+//                if (!follower.isBusy()){
+//                    stateThrow = 0;
+//                    setPathState( 11);
+//                }
+//                break;
+//            case 11:
+//                if (stateThrow == 99){
+//                    indexer.Stop();
+//                    targetRPM = 0;
+//                    targetPosition = 0;
+//                    setPathState(12);
+//                }
+//                break;}
         }
     }
 
@@ -438,69 +366,74 @@ public class AutoBlueSideTower extends OpMode {
         switch (stateThrow) {
             // -----------------PRIMA BILA -----------------
             case 0:
-                    timerToSee.reset();
-                    targetRPM = targetRPM1;
+                timerToSee.reset();
+                indexer.KeepInside();
+                targetRPM = targetRPM1;
+                if (!aruncareSelectiva){
+                    indexer.OuttakePose1();
+                }else {
                     if (greenBallPickedAt.equals(pp1)) {
-                            String caseUsed = detectedCase;
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose3();
-                                    break;
-                                default:
-                                    indexer.OuttakePose1();
-                                    break;
-                            }
+                        String caseUsed = detectedCase;
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose2();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose3();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose3();
+                                break;
+                            default:
+                                indexer.OuttakePose1();
+                                break;
                         }
+                    }
                     if (greenBallPickedAt.equals(pp2)) {
-                            String caseUsed = detectedCase;
+                        String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose3();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose2();
-                                    break;
-                                default:
-                                    indexer.OuttakePose1();
-                                    break;
-                            }
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose3();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose2();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose2();
+                                break;
+                            default:
+                                indexer.OuttakePose1();
+                                break;
                         }
+                    }
                     if (greenBallPickedAt.equals(pp3)) {
-                            String caseUsed = detectedCase;
+                        String caseUsed = detectedCase;
 
-                            switch (caseUsed) {
-                                case "GPP":
-                                    indexer.OuttakePose1();
-                                    break;
-                                case "PGP":
-                                    indexer.OuttakePose2();
-                                    break;
-                                case "PPG":
-                                    indexer.OuttakePose2();
-                                    break;
-                                default:
-                                    indexer.OuttakePose1();
-                                    break;
-                            }
+                        switch (caseUsed) {
+                            case "GPP":
+                                indexer.OuttakePose1();
+                                break;
+                            case "PGP":
+                                indexer.OuttakePose2();
+                                break;
+                            case "PPG":
+                                indexer.OuttakePose2();
+                                break;
+                            default:
+                                indexer.OuttakePose1();
+                                break;
                         }
-                    throwTimer.reset();
-                    stateThrow = 1;
+                    }
+                }
+                throwTimer.reset();
+                stateThrow = 1;
 
 
                 break;
             case 1:
 //                    if (throwTimer.milliseconds() > 1200) {
-                if (measuredRPM < (targetRPM + 100) && measuredRPM > (targetRPM -100) && throwTimer.milliseconds() > 700) {
+                if (measuredRPM < (targetRPM + 150) && measuredRPM > (targetRPM -50) && throwTimer.milliseconds() > 700) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 2;
@@ -516,7 +449,9 @@ public class AutoBlueSideTower extends OpMode {
             // ----------------- A DOUA BILA -----------------
             case 3:
                 if (throwTimer.milliseconds() > 200) {
-
+                    if (!aruncareSelectiva){
+                        indexer.OuttakePose2();
+                    }else {
                         if (greenBallPickedAt.equals(pp1)) {
                             String caseUsed = detectedCase;
 
@@ -571,13 +506,14 @@ public class AutoBlueSideTower extends OpMode {
                                     break;
                             }
                         }
-                        throwTimer.reset();
-                        stateThrow = 4;
+                    }
+                    throwTimer.reset();
+                    stateThrow = 4;
 
                 }
                 break;
             case 4:
-                if ((measuredRPM < (targetRPM + 100)) && measuredRPM > (targetRPM -100) && throwTimer.milliseconds() > 500) {
+                if ((measuredRPM < (targetRPM + 150)) && measuredRPM > (targetRPM -50) && throwTimer.milliseconds() > 500) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 5;
@@ -593,7 +529,9 @@ public class AutoBlueSideTower extends OpMode {
             // ----------------- A TREIA BILA -----------------
             case 6:
                 if (throwTimer.milliseconds() > 200) {
-
+                    if (!aruncareSelectiva){
+                        indexer.OuttakePose3();
+                    }else {
                         if (greenBallPickedAt.equals(pp1)) {
                             String caseUsed = detectedCase;
 
@@ -648,13 +586,14 @@ public class AutoBlueSideTower extends OpMode {
                                     break;
                             }
                         }
-                        throwTimer.reset();
-                        stateThrow = 7;
+                    }
+                    throwTimer.reset();
+                    stateThrow = 7;
 
                 }
                 break;
             case 7:
-                if (measuredRPM < targetRPM + 100 && measuredRPM > targetRPM -100 && throwTimer.milliseconds() > 500) {
+                if (measuredRPM < targetRPM + 150 && measuredRPM > targetRPM -50 && throwTimer.milliseconds() > 500) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 8;
@@ -668,6 +607,7 @@ public class AutoBlueSideTower extends OpMode {
                 break;
             case 9:
                 if (throwTimer.milliseconds() > 400) {
+                    indexer.PickPose1();
                     stateThrow = 99;
                     targetRPM = 0;
                     indexer.Down();
@@ -679,7 +619,7 @@ public class AutoBlueSideTower extends OpMode {
         switch (stateCollect) {
             case 0: // PickPose1
                 indexer.PickPose1();
-                if (distance <= 70) {
+                if (distance <= 60) {
                     indexer.PickPose2();
                     collecttimer.reset();
                     stateCollect = 1;
@@ -689,7 +629,7 @@ public class AutoBlueSideTower extends OpMode {
                 break;
 
             case 1:
-                if (collecttimer.milliseconds() > 600) {
+                if (distance <= 60 && collecttimer.milliseconds() > 500) {
                     indexer.PickPose3();
                     collecttimer.reset();
                     stateCollect = 2;
@@ -697,59 +637,63 @@ public class AutoBlueSideTower extends OpMode {
                 break;
 
             case 2: // PickPose3
-                if (distance <= 70 && collecttimer.milliseconds() > 500) {
+                if (distance <= 60 && collecttimer.milliseconds() > 300) {
                     collecttimer.reset();
-                    if (greenBallPickedAt.equals(pp1)) {
-                        String caseUsed = detectedCase;
-                        switch (caseUsed) {
-                            case "GPP":
-                                indexer.OuttakePose2();
-                                break;
-                            case "PGP":
-                                indexer.OuttakePose3();
-                                break;
-                            case "PPG":
-                                indexer.OuttakePose3();
-                                break;
-                            default:
-                                indexer.OuttakePose1();
-                                break;
+                    if (!aruncareSelectiva){
+                        indexer.OuttakePose1();
+                    }else {
+                        if (greenBallPickedAt.equals(pp1)) {
+                            String caseUsed = detectedCase;
+                            switch (caseUsed) {
+                                case "GPP":
+                                    indexer.OuttakePose2();
+                                    break;
+                                case "PGP":
+                                    indexer.OuttakePose3();
+                                    break;
+                                case "PPG":
+                                    indexer.OuttakePose3();
+                                    break;
+                                default:
+                                    indexer.OuttakePose1();
+                                    break;
+                            }
                         }
-                    }
-                    if (greenBallPickedAt.equals(pp2)) {
-                        String caseUsed = detectedCase;
+                        if (greenBallPickedAt.equals(pp2)) {
+                            String caseUsed = detectedCase;
 
-                        switch (caseUsed) {
-                            case "GPP":
-                                indexer.OuttakePose3();
-                                break;
-                            case "PGP":
-                                indexer.OuttakePose2();
-                                break;
-                            case "PPG":
-                                indexer.OuttakePose2();
-                                break;
-                            default:
-                                indexer.OuttakePose1();
-                                break;
+                            switch (caseUsed) {
+                                case "GPP":
+                                    indexer.OuttakePose3();
+                                    break;
+                                case "PGP":
+                                    indexer.OuttakePose2();
+                                    break;
+                                case "PPG":
+                                    indexer.OuttakePose2();
+                                    break;
+                                default:
+                                    indexer.OuttakePose1();
+                                    break;
+                            }
                         }
-                    }
-                    if (greenBallPickedAt.equals(pp3)) {
-                        String caseUsed = detectedCase;
+                        if (greenBallPickedAt.equals(pp3)) {
+                            String caseUsed = detectedCase;
 
-                        switch (caseUsed) {
-                            case "GPP":
-                                indexer.OuttakePose1();
-                                break;
-                            case "PGP":
-                                indexer.OuttakePose2();
-                                break;
-                            case "PPG":
-                                indexer.OuttakePose2();
-                                break;
-                            default:
-                                indexer.OuttakePose1();
-                                break;
+                            switch (caseUsed) {
+                                case "GPP":
+                                    indexer.OuttakePose1();
+                                    break;
+                                case "PGP":
+                                    indexer.OuttakePose2();
+                                    break;
+                                case "PPG":
+                                    indexer.OuttakePose2();
+                                    break;
+                                default:
+                                    indexer.OuttakePose1();
+                                    break;
+                            }
                         }
                     }
                     stateCollect = 99;
@@ -777,6 +721,7 @@ public class AutoBlueSideTower extends OpMode {
         telemetry.addData("throe" , stateThrow);
         telemetry.update();
     }
+
 
     @Override
     public void init() {
@@ -807,7 +752,7 @@ public class AutoBlueSideTower extends OpMode {
         colorSensorIndexer.initcolorsensor(hardwareMap);
         distanceSensor = hardwareMap.get(DistanceSensor.class, "SenzorIntakeCH");
         indexer.PickPose1();
-        outtake.Angle.setPosition(0.53);
+        outtake.Angle.setPosition(0.76);
         indexer.Down();
 
         pathTimer = new Timer();

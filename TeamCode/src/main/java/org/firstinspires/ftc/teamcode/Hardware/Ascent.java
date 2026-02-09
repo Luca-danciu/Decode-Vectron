@@ -7,16 +7,18 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 public class Ascent {
 
-    CRServo RidicareDJ;
-    CRServo RidicareDS;
-    CRServo RidicareSJ;
-    CRServo RidicareSS;
+    public CRServo RidicareDJ;
+    public CRServo RidicareDS;
+    public CRServo RidicareSJ;
+    public CRServo RidicareSS;
+    public Servo Prindere;
 
     public void ascentinit(HardwareMap hardwareMap) {
         RidicareDJ = hardwareMap.get(CRServo.class, "RidicareDJ");
         RidicareDS = hardwareMap.get(CRServo.class, "RidicareDS");
         RidicareSJ = hardwareMap.get(CRServo.class, "RidicareSJ");
         RidicareSS = hardwareMap.get(CRServo.class, "RidicareSS");
+        Prindere = hardwareMap.get(Servo.class, "Prindere");
 
     }
     public void Ridicare( double D ,  double S){
@@ -24,6 +26,12 @@ public class Ascent {
         RidicareDS.setPower(D);
         RidicareSJ.setPower(S);
         RidicareSS.setPower(S);
+    }
+    public void Prins(){
+        Prindere.setPosition(0);
+    }
+    public void Eliberat(){
+        Prindere.setPosition(0.4);
     }
 }
 
