@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.Hardware.Outtake;
 // ✅ IMPORTURI PENTRU PANELS
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.configurables.PanelsConfigurables;
-@Disabled
+//@Disabled
 @TeleOp(name = "Shooter RPM PIDF TeleOp")
 @Configurable // ✅ OBLIGATORIU PENTRU PANELS
 public class TestTeleOP extends OpMode {
