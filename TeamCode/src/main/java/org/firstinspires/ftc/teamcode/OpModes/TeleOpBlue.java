@@ -429,8 +429,10 @@ public class TeleOpBlue extends LinearOpMode {
             limelight.limelight.start();
 
             String tag = limelight.getAprilTag();
-            double dist = limelight.getAprilTagDistance();
-
+//            double dist = limelight.getAprilTagDistance();
+            double dx = towerX - follower.getPose().getX();
+            double dy = towerY - follower.getPose().getY();
+            double dist = Math.sqrt((dx*dx) + (dy*dy));
 
 //Detectie Tag
             if (tag != null && (tag.equals("GPP") || tag.equals("PGP") || tag.equals("PPG"))) {
@@ -461,11 +463,12 @@ public class TeleOpBlue extends LinearOpMode {
             }
 
 
+
 //Throw
             switch (stateThrow) {
                 // -----------------PRIMA BILA -----------------
                 case 0:
-                    if (gamepad1.triangle && allBallsIn) {
+                    if (gamepad1.triangle ) {
                         TakeOUT = false;
                         timerToSee.reset();
                         stopIntake = false;

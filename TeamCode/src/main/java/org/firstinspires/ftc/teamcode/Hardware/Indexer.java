@@ -10,6 +10,8 @@ public class Indexer {
 
     public Servo Banana;
     public DcMotor Intake;
+    public DcMotor ridicatoruDeBilioasa;
+
 
 
     public void indexerinit(HardwareMap hardwareMap){
@@ -17,6 +19,7 @@ public class Indexer {
         IndexerR = hardwareMap.get(Servo.class, "IndexerR");
         Banana = hardwareMap.get(Servo.class, "Banana");
         Intake = hardwareMap.get(DcMotor.class, "Intake");
+        ridicatoruDeBilioasa = hardwareMap.get(DcMotor.class, "Totr");
 
         Intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 

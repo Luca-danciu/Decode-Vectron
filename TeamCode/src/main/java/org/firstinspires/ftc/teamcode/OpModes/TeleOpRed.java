@@ -474,7 +474,7 @@ public class TeleOpRed extends LinearOpMode {
             switch (stateThrow) {
                 // -----------------PRIMA BILA -----------------
                 case 0:
-                    if (gamepad1.triangle && allBallsIn) {
+                    if (gamepad1.triangle ) {
                         TakeOUT = false;
                         timerToSee.reset();
                         stopIntake = false;
