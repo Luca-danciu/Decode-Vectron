@@ -923,7 +923,7 @@ public class TeleOpBNGBlue extends LinearOpMode {
                 integral = Math.max(-LAUNCHER_INTEGRAL_LIMIT, Math.min(LAUNCHER_INTEGRAL_LIMIT, integral));
 
                 // ✅ DERIVATĂ FILTRATĂ
-                double derivative = (error - previousError) / Math.max(currentTime, 0.01);
+                double derivative = (error - previousError) / Math.max(currentTime, LAUNCHER_PID_DERIVATIVE_TIME_MIN);
 
                 double output =
                         LAUNCHER_KP * error +
@@ -980,11 +980,11 @@ public class TeleOpBNGBlue extends LinearOpMode {
 //Power Launcher
             if (gamepad1.dpad_left && DpadPressed.milliseconds() > 200) {
                 DpadPressed.reset();
-                powerLauncher -= 0.1;
+                powerLauncher -= LAUNCHER_POWER_ADJUST_STEP;
             }
             if (gamepad1.dpad_right && DpadPressed.milliseconds() > 200) {
                 DpadPressed.reset();
-                powerLauncher += 0.1;
+                powerLauncher += LAUNCHER_POWER_ADJUST_STEP;
 
             }
 

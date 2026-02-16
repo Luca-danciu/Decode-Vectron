@@ -21,7 +21,7 @@ public class ColorSensorIndexer {
     public Telemetry telemetry;
     private DetectedColor lastColor = DetectedColor.UNKNOWN;
     private int stableCount = 0;
-    private static final int REQUIRED_STABLE_READS = 3;
+    private static final int REQUIRED_STABLE_READS = COLOR_SENSOR_REQUIRED_STABLE_READS;
     public void initcolorsensor(HardwareMap hwMap) {
         colorSensor = hwMap.get(NormalizedColorSensor.class, "SenzorIntakeCH");
         colorSensor.setGain(COLOR_SENSOR_GAIN);

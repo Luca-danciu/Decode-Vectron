@@ -62,7 +62,7 @@ public final class Constants {
      * Divisor to convert Limelight raw distance to meters.
      * Final distance = {@code rawDistance / LIMELIGHT_DISTANCE_DIVISOR}.
      */
-    public static final double LIMELIGHT_DISTANCE_DIVISOR = 10000.0;
+    public static final int LIMELIGHT_DISTANCE_DIVISOR = 10000;
 
     /**
      * Color sensor amplification gain (0–1023).
@@ -148,6 +148,10 @@ public final class Constants {
     public static double TURRET_POS_D = 0;
     /** Turret position PID feedforward gain - provides holding torque. */
     public static double TURRET_POS_F = 0.1;
+    /** Auto turret F when moving to score (higher for responsiveness). */
+    public static final double AUTO_TURRET_POS_F_MOVING = 0.3;
+    /** Auto turret F when holding position after score. */
+    public static final double AUTO_TURRET_POS_F_HOLDING = 0.1;
 
     /**
      * Limelight tx deadzone in degrees.
@@ -171,7 +175,7 @@ public final class Constants {
      * Debounce time in ms before allowing turret state switch (share button).
      * Prevents accidental mode changes from brief button taps.
      */
-    public static final long TURRET_STATE_DEBOUNCE_MS = 400;
+    public static final int TURRET_STATE_DEBOUNCE_MS = 400;
 
     /**
      * Step size in degrees when adjusting turret offset via d-pad.
@@ -202,31 +206,31 @@ public final class Constants {
     public static final double LAUNCHER_DEFAULT_POWER = 0.9;
 
     /** Maximum allowed launcher RPM. Requests above this are clamped for safety. */
-    public static final double LAUNCHER_MAX_RPM = 12000;
+    public static final int LAUNCHER_MAX_RPM = 12000;
 
     /**
      * Minimum RPM threshold. Below this, launcher motor is stopped entirely
      * (no PID output) to avoid unnecessary power draw and wear.
      */
-    public static final double LAUNCHER_MIN_ACTIVE_RPM = 50;
+    public static final int LAUNCHER_MIN_ACTIVE_RPM = 50;
 
     /**
      * RPM tolerance for "at speed" check.
      * Ball is pushed when: {@code |measuredRPM - targetRPM| <= LAUNCHER_RPM_TOLERANCE}.
      */
-    public static final double LAUNCHER_RPM_TOLERANCE = 100;
+    public static final int LAUNCHER_RPM_TOLERANCE = 100;
 
     /**
      * PIDF deadzone - if RPM error is below this, error is treated as 0.
      * Prevents motor chatter when nearly at target RPM.
      */
-    public static final double LAUNCHER_ERROR_DEADZONE = 40;
+    public static final int LAUNCHER_ERROR_DEADZONE = 40;
 
     /**
      * Integral anti-windup limit.
      * Integral term is clamped to ±this value to prevent windup during long errors.
      */
-    public static final double LAUNCHER_INTEGRAL_LIMIT = 5000;
+    public static final int LAUNCHER_INTEGRAL_LIMIT = 5000;
 
     /**
      * PIDF control loop period in seconds.
@@ -235,17 +239,17 @@ public final class Constants {
     public static final double LAUNCHER_DT = 0.02;
 
     /** Target RPM when distance to goal is &lt; 1.2 m (near zone). */
-    public static final double LAUNCHER_RPM_NEAR = 3200;
+    public static final int LAUNCHER_RPM_NEAR = 3200;
     /** Target RPM when distance is 1.2–1.9 m (close zone). */
-    public static final double LAUNCHER_RPM_CLOSE = 3400;
+    public static final int LAUNCHER_RPM_CLOSE = 3400;
     /** Target RPM when distance is 1.9–3 m (mid zone). */
-    public static final double LAUNCHER_RPM_MID = 3500;
+    public static final int LAUNCHER_RPM_MID = 3500;
     /** Target RPM when distance is 3–4.5 m (mid-far zone). */
-    public static final double LAUNCHER_RPM_MID_FAR = 3700;
+    public static final int LAUNCHER_RPM_MID_FAR = 3700;
     /** Target RPM when distance is 4.5–8 m (far zone). */
-    public static final double LAUNCHER_RPM_FAR = 4000;
+    public static final int LAUNCHER_RPM_FAR = 4000;
     /** Target RPM when distance is &gt; 8 m (max zone). */
-    public static final double LAUNCHER_RPM_MAX = 4800;
+    public static final int LAUNCHER_RPM_MAX = 4800;
 
     /** Default outtake servo position when not actively shooting. */
     public static final double LAUNCHER_SERVO_DEFAULT = 0.28;
@@ -339,36 +343,36 @@ public final class Constants {
      * Distance threshold in mm. When distance sensor reads ≤ this, a ball is considered present.
      * Used to advance through PickPose1 → 2 → 3.
      */
-    public static final double COLLECT_DISTANCE_THRESHOLD_MM = 70;
+    public static final int COLLECT_DISTANCE_THRESHOLD_MM = 70;
 
     /** Delay in ms to wait before moving from PickPose1 to PickPose2. Allows ball to settle. */
-    public static final long COLLECT_DELAY_POSE1_TO_2_MS = 600;
+    public static final int COLLECT_DELAY_POSE1_TO_2_MS = 600;
     /** Delay in ms to wait before moving from PickPose2 to PickPose3. */
-    public static final long COLLECT_DELAY_POSE2_TO_3_MS = 300;
+    public static final int COLLECT_DELAY_POSE2_TO_3_MS = 300;
     /** Delay in ms after all balls in before TakeOUT is allowed. Prevents premature ejection. */
-    public static final long COLLECT_DELAY_BEFORE_TAKEOUT_MS = 300;
+    public static final int COLLECT_DELAY_BEFORE_TAKEOUT_MS = 300;
     /** Delay in ms after collect complete before intake motor stops. Clears any residual ball. */
-    public static final long COLLECT_STOP_INTAKE_DELAY_MS = 700;
+    public static final int COLLECT_STOP_INTAKE_DELAY_MS = 700;
     /** Duration in ms for TakeGreenBallOut / TakePurpleBallOut intake ejection pulses. */
-    public static final long COLLECT_EJECT_DURATION_MS = 400;
+    public static final int COLLECT_EJECT_DURATION_MS = 400;
 
     /** Gamepad rumble duration (ms) when 3 balls successfully collected. */
-    public static final long RUMBLE_COLLECT_COMPLETE_MS = 300;
+    public static final int RUMBLE_COLLECT_COMPLETE_MS = 300;
     /** Gamepad rumble duration (ms) when selective collect (GPP/PGP/PPG) is complete. */
-    public static final long RUMBLE_SELECTIVE_COMPLETE_MS = 200;
+    public static final int RUMBLE_SELECTIVE_COMPLETE_MS = 200;
 
     // =========================================================================
     // THROW STATE MACHINE
     // =========================================================================
 
     /** Delay in ms to wait for launcher RPM before pushing first ball. Ensures flywheel is at speed. */
-    public static final long THROW_RPM_WAIT_MS = 400;
+    public static final int THROW_RPM_WAIT_MS = 400;
     /** Delay in ms between push command and indexer returning to down position. */
-    public static final long THROW_PUSH_TO_DOWN_MS = 200;
+    public static final int THROW_PUSH_TO_DOWN_MS = 200;
     /** Delay in ms between changing indexer pose when firing multiple balls. */
-    public static final long THROW_POSE_CHANGE_MS = 200;
+    public static final int THROW_POSE_CHANGE_MS = 200;
     /** Delay in ms after last ball thrown before resetting throw state machine. */
-    public static final long THROW_RESET_DELAY_MS = 400;
+    public static final int THROW_RESET_DELAY_MS = 400;
 
     // =========================================================================
     // DRIVETRAIN
@@ -386,6 +390,82 @@ public final class Constants {
      */
     public static final double DRIVE_POWER_SCALE = 2.0;
 
+    /** Step size when adjusting launcher power via d-pad (TeleOp manual mode). */
+    public static final double LAUNCHER_POWER_ADJUST_STEP = 0.1;
+
+    /** Min time (s) used in derivative term to avoid division by zero. */
+    public static final double LAUNCHER_PID_DERIVATIVE_TIME_MIN = 0.01;
+
+    /** Default turret PID power during auto tower paths (0–1). */
+    public static final double AUTO_TURRET_POWER = 0.8;
+
+    /** Default turret tx offset in degrees. */
+    public static final double TURRET_TX_OFFSET_DEFAULT = 0.0;
+
+    /** Number of consecutive stable color reads required before confirming ball color. */
+    public static final int COLOR_SENSOR_REQUIRED_STABLE_READS = 3;
+
+    // =========================================================================
+    // PATH FOLLOWER (pedroPathing) - kP, kV, kA, velocities, etc.
+    // =========================================================================
+
+    /** Mecanum max power (0–1). */
+    public static final double PATH_MAX_POWER = 1.0;
+    /** Mecanum X velocity (inches/s) - forward/back. */
+    public static final double PATH_X_VELOCITY = 73.908;
+    /** Mecanum Y velocity (inches/s) - strafe. */
+    public static final double PATH_Y_VELOCITY = 58.436;
+
+    /** Pinpoint forward pod Y offset (inches). */
+    public static final double PATH_FORWARD_POD_Y = 6.3;
+    /** Pinpoint strafe pod X offset (inches). */
+    public static final double PATH_STRAFE_POD_X = -3.15;
+
+    /** Robot mass (kg) for path follower feedforward. */
+    public static final double PATH_MASS = 9.52;
+    /** Forward zero-power acceleration (in/s²). */
+    public static final double PATH_FORWARD_ZERO_POWER_ACCEL = -35.288;
+    /** Lateral zero-power acceleration (in/s²). */
+    public static final double PATH_LATERAL_ZERO_POWER_ACCEL = -66.111;
+
+    /** Translational PIDF kP – position error gain. */
+    public static final double PATH_TRANSLATIONAL_KP = 0.2;
+    /** Translational PIDF kI. */
+    public static final double PATH_TRANSLATIONAL_KI = 0;
+    /** Translational PIDF kD. */
+    public static final double PATH_TRANSLATIONAL_KD = 0.02;
+    /** Translational PIDF kF – feedforward. */
+    public static final double PATH_TRANSLATIONAL_KF = 0.027;
+
+    /** Heading PIDF kP. */
+    public static final double PATH_HEADING_KP = 1;
+    /** Heading PIDF kI. */
+    public static final double PATH_HEADING_KI = 0;
+    /** Heading PIDF kD. */
+    public static final double PATH_HEADING_KD = 0;
+    /** Heading PIDF kF. */
+    public static final double PATH_HEADING_KF = 0.01;
+
+    /** Drive (Filtered) PIDF kP. */
+    public static final double PATH_DRIVE_KP = 0.025;
+    /** Drive PIDF kI. */
+    public static final double PATH_DRIVE_KI = 0;
+    /** Drive PIDF kD. */
+    public static final double PATH_DRIVE_KD = 0.00001;
+    /** Drive PIDF kV – velocity feedforward. */
+    public static final double PATH_DRIVE_KV = 0.6;
+    /** Drive PIDF kA – acceleration feedforward. */
+    public static final double PATH_DRIVE_KA = 0.01;
+
+    /** Path constraints: max velocity. */
+    public static final double PATH_CONSTRAINT_MAX_VELOCITY = 0.99;
+    /** Path constraints: max acceleration. */
+    public static final double PATH_CONSTRAINT_MAX_ACCELERATION = 100;
+    /** Path constraints: max angular velocity. */
+    public static final double PATH_CONSTRAINT_MAX_ANGULAR_VELOCITY = 10;
+    /** Path constraints: max angular acceleration. */
+    public static final double PATH_CONSTRAINT_MAX_ANGULAR_ACCELERATION = 1;
+
     /** Launcher motor power when "charging" (reverse spin-up before shot). */
     public static final double LAUNCHER_CHARGE_POWER = -0.8;
 
@@ -400,7 +480,7 @@ public final class Constants {
     /** Red alliance park destination (x, y) when cross button pressed. */
     public static final Pose RED_PARK_POSE = new Pose(33, 33.4);
     /** Red alliance park heading in degrees. Robot faces this angle when parked. */
-    public static final double RED_PARK_HEADING_DEG = 45;
+    public static final int RED_PARK_HEADING_DEG = 45;
 
     /** Blue alliance starting pose: x, y (inches), heading (radians). */
     public static final Pose BLUE_START_POSE = new Pose(57, 113, Math.toRadians(180));
@@ -409,7 +489,7 @@ public final class Constants {
     /** Blue alliance park destination (x, y). */
     public static final Pose BLUE_PARK_POSE = new Pose(111, 29.5);
     /** Blue alliance park heading in degrees. */
-    public static final double BLUE_PARK_HEADING_DEG = 135;
+    public static final int BLUE_PARK_HEADING_DEG = 135;
 
     /** BNG Blue variant starting pose. */
     public static final Pose BNG_BLUE_START_POSE = new Pose(40, 12, Math.toRadians(180));
@@ -418,6 +498,61 @@ public final class Constants {
      * Controls how quickly heading transitions toward park angle during path.
      */
     public static final double PARK_HEADING_BLEND = 0.8;
+
+    // =========================================================================
+    // AUTONOMOUS-SPECIFIC CONSTANTS
+    // =========================================================================
+
+    /** Tighter ball detection threshold (mm) used in some autos. */
+    public static final int AUTO_COLLECT_DISTANCE_MM_TIGHT = 60;
+    /** Faster collect delay (ms) from PickPose1 to PickPose2 in some autos. */
+    public static final int AUTO_COLLECT_DELAY_POSE1_TO_2_MS_FAST = 500;
+    /** Timeout (s) while driving to collect before giving up. */
+    public static final double AUTO_COLLECT_TIMEOUT_DRIVING_SEC = 1.5;
+    /** Delay (s) before reading AprilTag to allow camera to stabilize. */
+    public static final double AUTO_TAG_DETECTION_DELAY_SEC = 0.05;
+    /** Delay (s) before starting score path in BNG combo. */
+    public static final double AUTO_BNG_SCORE_DELAY_SEC = 0.5;
+
+    /** Auto throw: extended RPM wait (ms) before first push. Some autos use looser tolerance. */
+    public static final int AUTO_THROW_RPM_WAIT_MS_EXTENDED = 700;
+    /** Auto throw: mid RPM wait (ms) before push. */
+    public static final int AUTO_THROW_RPM_WAIT_MS_MID = 600;
+    /** Auto throw: alternate RPM wait (ms) for subsequent balls. */
+    public static final int AUTO_THROW_RPM_WAIT_MS_ALT = 500;
+    /** Auto throw: looser RPM tolerance (high) for "at speed" check. */
+    public static final int AUTO_THROW_RPM_TOLERANCE_HIGH = 150;
+    /** Auto throw: looser RPM tolerance (low) for "at speed" check. */
+    public static final int AUTO_THROW_RPM_TOLERANCE_LOW = 50;
+
+    /** Auto outtake angle for tower-style autos (close shot). */
+    public static final double AUTO_OUTTAKE_ANGLE_TOWER = 0.53;
+    /** Auto outtake angle for mid-range tower shots. */
+    public static final double AUTO_OUTTAKE_ANGLE_MID = 0.72;
+    /** Auto outtake angle default (used when no specific angle). */
+    public static final double AUTO_OUTTAKE_ANGLE_DEFAULT = 0.76;
+    /** Auto outtake angle for triangle/small triangle autos (far shot). */
+    public static final double AUTO_OUTTAKE_ANGLE_TRIANGLE = 0.85;
+
+    /** Default auto launcher RPM. */
+    public static final int AUTO_LAUNCHER_RPM_DEFAULT = 3500;
+    /** Auto launcher RPM for triangle/small triangle paths. */
+    public static final int AUTO_LAUNCHER_RPM_TRIANGLE = 4900;
+    /** Auto launcher RPM for BNG combo (first shot). */
+    public static final int AUTO_LAUNCHER_RPM_BNG = 5300;
+    /** Auto launcher RPM for BNG combo (subsequent shots). */
+    public static final int AUTO_LAUNCHER_RPM_BNG_SECOND = 3600;
+    /** Auto launcher RPM for far shot (e.g. last pickup). */
+    public static final int AUTO_LAUNCHER_RPM_FAR = 2800;
+    /** Auto launcher RPM for close shot (e.g. Blue tower last pickup). */
+    public static final int AUTO_LAUNCHER_RPM_CLOSE_SHOT = 3000;
+
+    /** Auto path follow speed (0–1) for slow segments. */
+    public static final double AUTO_PATH_SPEED_SLOW = 0.6;
+    /** Auto path follow speed (0–1) for mid segments. */
+    public static final double AUTO_PATH_SPEED_MID = 0.7;
+    /** Auto path follow speed (0–1) for fast segments. */
+    public static final double AUTO_PATH_SPEED_FAST = 0.8;
 
     // =========================================================================
     // LEGACY / TUNING (kept for Configurables compatibility)

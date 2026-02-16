@@ -119,7 +119,7 @@ public class TeleOpRed extends LinearOpMode {
     public static double targetRPM = 0;
     public static double getTargetRPM = 0;
 
-    double txOffset = 0.0;   // offset în grade
+    double txOffset = TURRET_TX_OFFSET_DEFAULT;
     double measuredRPM = 0;
     boolean resumeFromLast = false;
     int turretHoldTicks = 0;
@@ -924,7 +924,7 @@ public class TeleOpRed extends LinearOpMode {
                 integral = Math.max(-LAUNCHER_INTEGRAL_LIMIT, Math.min(LAUNCHER_INTEGRAL_LIMIT, integral));
 
                 // ✅ DERIVATĂ FILTRATĂ
-                double derivative = (error - previousError) / Math.max(currentTime, 0.01);
+                double derivative = (error - previousError) / Math.max(currentTime, LAUNCHER_PID_DERIVATIVE_TIME_MIN);
 
                 double output =
                         LAUNCHER_KP * error +

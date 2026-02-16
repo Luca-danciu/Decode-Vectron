@@ -14,6 +14,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import static org.firstinspires.ftc.teamcode.Constants.*;
+
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Hardware.ColorSensorIndexer;
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
@@ -30,23 +32,15 @@ public class AutoRedSideSmallTriangle extends OpMode {
     ElapsedTime throwTimer;
     ElapsedTime collecttimer;
 
-    //Set RPM Launcher
-    private static final double CPR = 18.666;
-    public static double kP = 0.005;
-    public static double kI = 0.000007;
-    public static double kD = 0.0001;
-    public static double kF = 0.0001468;
-
     private double integral = 0;
     private double previousError = 0;
 
     private ElapsedTime timer = new ElapsedTime();
     private ElapsedTime timerToSee = new ElapsedTime();
     double Time = 0;
-    private double dt = 0.02;
 
     private int lastEncoder = 0;
-    public static double targetRPM1 = 4900;
+    public static double targetRPM1 = AUTO_LAUNCHER_RPM_TRIANGLE;
     public static double targetRPM = 0;
     double measuredRPM;
     public static double pidTargetRPM = 0;
@@ -55,13 +49,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
 
     //PIDF for turret
     private DcMotorEx turret;
-    public static final double TICKS_PER_DEGREE_Turret = 6.195;
-    public static final int MAX_TICKS = (int)(180 * TICKS_PER_DEGREE_Turret);
-
-    public static double P = 0.006;
-    public static double I = 0.0;
-    public static double D = 0;
-    public static double F = 0.1;
+    public static final int MAX_TICKS = (int)(180 * TURRET_TICKS_PER_DEGREE_LIMELIGHT);
     private double integralTurret = 0;
     private double lastError = 0;
     public static int targetPosition = 0;
@@ -172,7 +160,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
                     detectedCase = tag;
                     targetPosition = -130;
                     actionTimer.resetTimer();
-                    outtake.Angle.setPosition(0.85);
+                    outtake.Angle.setPosition(AUTO_OUTTAKE_ANGLE_TRIANGLE);
                     targetRPM = targetRPM1;
                     stateThrow = 0;
                     setPathState(1);
@@ -182,7 +170,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
 
             case 1:
                 if (stateThrow == 99) {
-                    follower.followPath(pickpose1 , 0.8 , true);
+                    follower.followPath(pickpose1 , AUTO_PATH_SPEED_FAST , true);
                     indexer.Colect();
                     actionTimer.resetTimer();
                     greenBallPickedAt = "PickPose1";
@@ -193,7 +181,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 break;
             case 2:
 
-                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)) {
+                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > AUTO_COLLECT_TIMEOUT_DRIVING_SEC)) {
                     indexer.TakeOut();
                     follower.followPath(score1);
                     limelight.limelight.stop();
@@ -221,7 +209,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
 
             case 5:
 
-                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)) {
+                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > AUTO_COLLECT_TIMEOUT_DRIVING_SEC)) {
                     follower.followPath(score2);
                     limelight.limelight.stop();
                     targetRPM = targetRPM1;
@@ -236,7 +224,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 break;
             case 7:
                 if (stateThrow == 99){
-                    follower.followPath(Park ,0.6 , true);
+                    follower.followPath(Park , AUTO_PATH_SPEED_SLOW , true);
                     indexer.Stop();
                     targetRPM = 0;
                     targetPosition = 0;
@@ -256,10 +244,9 @@ public class AutoRedSideSmallTriangle extends OpMode {
     @Override
     public void loop() {
 
-        targetRPM = Math.max(0, Math.min(12000, targetRPM));
+        targetRPM = Math.max(0, Math.min(LAUNCHER_MAX_RPM, targetRPM));
 
-        // ✅ STOP REAL LA 0 RPM
-        if (targetRPM <= 50) {
+        if (targetRPM <= LAUNCHER_MIN_ACTIVE_RPM) {
             launcher.setPower(0);
             integral = 0;
             previousError = 0;
@@ -268,30 +255,28 @@ public class AutoRedSideSmallTriangle extends OpMode {
         }
 
         double currentTime = timer.seconds();
-        if (currentTime >= dt) {
+        if (currentTime >= LAUNCHER_DT) {
 
             int currentEncoder = launcher.getCurrentPosition();
             int delta = currentEncoder - lastEncoder;
 
-            measuredRPM = (delta * 60.0) / (CPR * currentTime);
+            measuredRPM = (delta * 60.0) / (LAUNCHER_CPR * currentTime);
 
             double error = targetRPM - measuredRPM;
 
-            // ✅ DEADZONE ANTI TREPIDAT
-            if (Math.abs(error) < 40) error = 0;
+            if (Math.abs(error) < LAUNCHER_ERROR_DEADZONE) error = 0;
 
-            // ✅ INTEGRAL CU LIMITARE (ANTI WIND-UP)
             integral += error * currentTime;
-            integral = Math.max(-5000, Math.min(5000, integral));
+            integral = Math.max(-LAUNCHER_INTEGRAL_LIMIT, Math.min(LAUNCHER_INTEGRAL_LIMIT, integral));
 
             // ✅ DERIVATĂ FILTRATĂ
-            double derivative = (error - previousError) / Math.max(currentTime, 0.01);
+            double derivative = (error - previousError) / Math.max(currentTime, LAUNCHER_PID_DERIVATIVE_TIME_MIN);
 
             double output =
-                    kP * error +
-                            kI * integral +
-                            kD * derivative +
-                            kF * targetRPM;
+                    LAUNCHER_KP * error +
+                            LAUNCHER_KI * integral +
+                            LAUNCHER_KD * derivative +
+                            LAUNCHER_KF * targetRPM;
 
             output = Math.max(0.0, Math.min(1.0, output));
 
@@ -373,14 +358,14 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 break;
             case 1:
 //                    if (throwTimer.milliseconds() > 1200) {
-                if (measuredRPM < (targetRPM + 150) && measuredRPM > (targetRPM -50) && throwTimer.milliseconds() > 700) {
+                if (measuredRPM < (targetRPM + AUTO_THROW_RPM_TOLERANCE_HIGH) && measuredRPM > (targetRPM - AUTO_THROW_RPM_TOLERANCE_LOW) && throwTimer.milliseconds() > AUTO_THROW_RPM_WAIT_MS_EXTENDED) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 2;
                 }
                 break;
             case 2:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                     indexer.Down();
                     throwTimer.reset();
                     stateThrow = 3;
@@ -388,7 +373,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 break;
             // ----------------- A DOUA BILA -----------------
             case 3:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
 
                     if (greenBallPickedAt.equals(pp1)) {
                         String caseUsed = detectedCase;
@@ -450,14 +435,14 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 }
                 break;
             case 4:
-                if ((measuredRPM < (targetRPM + 150)) && measuredRPM > (targetRPM -50) && throwTimer.milliseconds() > 500) {
+                if ((measuredRPM < (targetRPM + AUTO_THROW_RPM_TOLERANCE_HIGH)) && measuredRPM > (targetRPM - AUTO_THROW_RPM_TOLERANCE_LOW) && throwTimer.milliseconds() > AUTO_THROW_RPM_WAIT_MS_ALT) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 5;
                 }
                 break;
             case 5:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                     indexer.Down();
                     throwTimer.reset();
                     stateThrow = 6;
@@ -465,7 +450,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 break;
             // ----------------- A TREIA BILA -----------------
             case 6:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
 
                     if (greenBallPickedAt.equals(pp1)) {
                         String caseUsed = detectedCase;
@@ -527,20 +512,20 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 }
                 break;
             case 7:
-                if (measuredRPM < targetRPM + 150 && measuredRPM > targetRPM -50 && throwTimer.milliseconds() > 500) {
+                if (measuredRPM < targetRPM + AUTO_THROW_RPM_TOLERANCE_HIGH && measuredRPM > targetRPM - AUTO_THROW_RPM_TOLERANCE_LOW && throwTimer.milliseconds() > AUTO_THROW_RPM_WAIT_MS_ALT) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 8;
                 }
                 break;
             case 8:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                     indexer.Down();
                     stateThrow = 9;
                 }
                 break;
             case 9:
-                if (throwTimer.milliseconds() > 400) {
+                if (throwTimer.milliseconds() > THROW_RESET_DELAY_MS) {
                     stateThrow = 99;
                     targetRPM = 0;
                     indexer.Down();
@@ -552,7 +537,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
         switch (stateCollect) {
             case 0: // PickPose1
                 indexer.PickPose1();
-                if (distance <= 60) {
+                if (distance <= AUTO_COLLECT_DISTANCE_MM_TIGHT) {
                     indexer.PickPose2();
                     collecttimer.reset();
                     stateCollect = 1;
@@ -562,7 +547,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 break;
 
             case 1:
-                if (distance <= 60 && collecttimer.milliseconds() > 600) {
+                if (distance <= AUTO_COLLECT_DISTANCE_MM_TIGHT && collecttimer.milliseconds() > COLLECT_DELAY_POSE1_TO_2_MS) {
                     indexer.PickPose3();
                     collecttimer.reset();
                     stateCollect = 2;
@@ -570,7 +555,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
                 break;
 
             case 2: // PickPose3
-                if (distance <= 60 && collecttimer.milliseconds() > 300) {
+                if (distance <= AUTO_COLLECT_DISTANCE_MM_TIGHT && collecttimer.milliseconds() > COLLECT_DELAY_POSE2_TO_3_MS) {
                     collecttimer.reset();
                     if (greenBallPickedAt.equals(pp1)) {
                         String caseUsed = detectedCase;
@@ -681,7 +666,7 @@ public class AutoRedSideSmallTriangle extends OpMode {
         colorSensorIndexer.initcolorsensor(hardwareMap);
         distanceSensor = hardwareMap.get(DistanceSensor.class, "SenzorIntakeCH");
         indexer.PickPose1();
-        outtake.Angle.setPosition(0.76);
+        outtake.Angle.setPosition(AUTO_OUTTAKE_ANGLE_DEFAULT);
         indexer.Down();
 
         pathTimer = new Timer();
@@ -728,10 +713,10 @@ public class AutoRedSideSmallTriangle extends OpMode {
         double derivative = error - lastError;
         lastError = error;
 
-        return (P * error)
-                + (I * integralTurret)
-                + (D * derivative)
-                + (F * Math.signum(error));
+        return (TURRET_POS_P * error)
+                + (TURRET_POS_I * integralTurret)
+                + (TURRET_POS_D * derivative)
+                + (TURRET_POS_F * Math.signum(error));
     }
     private int wrapTicks(int ticks) {
         int range = MAX_TICKS * 2;
