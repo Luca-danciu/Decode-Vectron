@@ -26,6 +26,8 @@ import org.firstinspires.ftc.teamcode.Hardware.Drivetrain;
 import org.firstinspires.ftc.teamcode.Hardware.IMUIndexer;
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
 import org.firstinspires.ftc.teamcode.Hardware.Limelight;
+import static org.firstinspires.ftc.teamcode.Constants.*;
+
 import org.firstinspires.ftc.teamcode.Hardware.Outtake;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -56,19 +58,14 @@ public class TeleOpRed extends LinearOpMode {
 
     //valori
     double distance = 0;
-    public static double interval1 = 0.552;
-    public static double interval2 = 0.7;
-    public static double interval3 = 0.8;
-    double powerLauncher = 0.9;
+    double powerLauncher = LAUNCHER_DEFAULT_POWER;
     int purplecount = 0;
     int greencount = 0;
     double Time = 0;
-    public int towerX = 129;
-    public int towerY = 130;
-
+    public int towerX = RED_TOWER_X;
+    public int towerY = RED_TOWER_Y;
 
     //Tureta
-    static final double TICKS_PER_DEGREE = 6.071111;
     double dx = 0;
     double dy = 0;
     double headingRobot = 0;
@@ -78,23 +75,12 @@ public class TeleOpRed extends LinearOpMode {
     double powerT;
     private double integralT = 0;
     private double lastErrorT = 0;
-    public static double kPT = 0.005;
-    public static double kIT = 0.0;
-    public static double kDT = 0.0002;
-    public static double kFT = 0.05;
-    public static final int MAX_TICKST = (int)(180 * TICKS_PER_DEGREE);
+    public static final int MAX_TICKST = (int)(180 * TURRET_TICKS_PER_DEGREE);
     public static final int MIN_TICKST = -MAX_TICKST;
-    private final Pose START_POSE = new Pose(86, 117, Math.toRadians(0)); // Exemplu: poziție start + heading 90° (spre nord)
+    private final Pose START_POSE = RED_START_POSE;
 
-
-    static final double TICKS_PER_DEGREET = 6.533;
-    public static final int MAX_TICKS = (int)(180 * TICKS_PER_DEGREET);
+    public static final int MAX_TICKS = (int)(180 * TURRET_TICKS_PER_DEGREE_LIMELIGHT);
     public static final int MIN_TICKS = -MAX_TICKS;
-
-    public static double P = 0.006;
-    public static double I = 0.0;
-    public static double D = 0;
-    public static double F = 0.1;
     private double integralTurret = 0;
     private double lastError = 0;
     public static int targetPosition = 0;
@@ -123,32 +109,17 @@ public class TeleOpRed extends LinearOpMode {
     public String pp3 = "PickPose3";
     String greenBallPickedAt = "Nicio bila verde preluata";
     ColorSensorIndexer.DetectedColor detectedColor1, detectedColor2, detectedColor3;
-    //Pidf aruncare
-    private static final double CPR = 18.666;
-
-    // ✅ PIDF REGLABIL DIN PANELS (OBLIGATORIU public static)
-    public static double kP = 0.003;
-    public static double kI = 0.000007;
-    public static double kD = 0.00007;
-    public static double kF = 0.0001468;
-    public static double servo = 0.28;
 
     private double integral = 0;
     private double previousError = 0;
 
     private ElapsedTime timer = new ElapsedTime();
-    private double dt = 0.02;
 
     private int lastEncoder = 0;
     public static double targetRPM = 0;
     public static double getTargetRPM = 0;
 
-    public static double targetR1 = 3400;
-    public static double targetR2 = 3600;
-    public static double targetR3 = 4200;
-    public static double targetR4 = 4800;
-    double txOffset = 0.0;   // offset în grade
-    double offsetStep = 0.25;
+    double txOffset = TURRET_TX_OFFSET_DEFAULT;
     double measuredRPM = 0;
     boolean resumeFromLast = false;
     int turretHoldTicks = 0;
@@ -157,8 +128,6 @@ public class TeleOpRed extends LinearOpMode {
     private boolean pathFinished = false;
     private boolean automatedDrive;
     private Supplier<PathChain> parcare;
-    public static double DR= 1;
-    public static double SR = 1;
     boolean ridic = false;
 
 
@@ -217,9 +186,9 @@ public class TeleOpRed extends LinearOpMode {
 
         follower = Constants.createFollower(hardwareMap);
         follower.setPose( START_POSE );
-        parcare = () -> follower.pathBuilder() //Lazy Curve Generation
-                .addPath(new Path(new BezierLine(follower::getPose, new Pose(33, 33.4))))
-                .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(follower::getHeading, Math.toRadians(45), 0.8))
+        parcare = () -> follower.pathBuilder()
+                .addPath(new Path(new BezierLine(follower::getPose, RED_PARK_POSE)))
+                .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(follower::getHeading, Math.toRadians(RED_PARK_HEADING_DEG), PARK_HEADING_BLEND))
                 .build();
 
         waitForStart();
@@ -242,12 +211,12 @@ public class TeleOpRed extends LinearOpMode {
                 pathFinished = false;
             }
             if (!automatedDrive) {
-                if (Math.abs(gamepad1.left_stick_y) < 0.05 &&
-                        Math.abs(gamepad1.left_stick_x) < 0.05 &&
-                        Math.abs(gamepad1.right_stick_x) < 0.05 &&
-                        Math.abs(gamepad1.left_stick_y) > -0.05 &&
-                        Math.abs(gamepad1.left_stick_x) > -0.05 &&
-                        Math.abs(gamepad1.right_stick_x) > -0.05) {
+                if (Math.abs(gamepad1.left_stick_y) < DRIVE_STICK_DEADZONE &&
+                        Math.abs(gamepad1.left_stick_x) < DRIVE_STICK_DEADZONE &&
+                        Math.abs(gamepad1.right_stick_x) < DRIVE_STICK_DEADZONE &&
+                        Math.abs(gamepad1.left_stick_y) > -DRIVE_STICK_DEADZONE &&
+                        Math.abs(gamepad1.left_stick_x) > -DRIVE_STICK_DEADZONE &&
+                        Math.abs(gamepad1.right_stick_x) > -DRIVE_STICK_DEADZONE) {
 
                     drivetrain.activeBrake();
                 } else {
@@ -283,7 +252,7 @@ public class TeleOpRed extends LinearOpMode {
 
 //Tureta
             if (gamepad1.left_bumper){
-                follower.setPose( new Pose(105 , 140 ,Math.toRadians(0)));
+                follower.setPose(RED_TURRET_OVERRIDE_POSE);
             }
             switch (stateTureta){
                 case 0:
@@ -305,20 +274,20 @@ public class TeleOpRed extends LinearOpMode {
                             headingTuretaGrade = headingTuretaGrade + 360;
 
                         }
-                        int targetTicks = (int) (headingTuretaGrade * TICKS_PER_DEGREE);
+                        int targetTicks = (int) (headingTuretaGrade * TURRET_TICKS_PER_DEGREE);
                         int currentTicks = turret.getCurrentPosition();
                         int error = targetTicks - currentTicks;
                         if (currentTicks >= MAX_TICKST && powerT > 0) powerT = 0;
                         if (currentTicks <= MIN_TICKS && powerT < 0) powerT = 0;
                         double powerT =
-                                kPT * error +
-                                        kDT * (error - lastErrorT);
+                                TURRET_KP * error +
+                                        TURRET_KD * (error - lastErrorT);
 
                         lastError = error;
                         powerT = Math.max(-1, Math.min(1, powerT));
                         turret.setPower(powerT);
 //                    follower.update();
-                        if (gamepad1.share && statetureta.milliseconds() > 400) {
+                        if (gamepad1.share && statetureta.milliseconds() > TURRET_STATE_DEBOUNCE_MS) {
                             statetureta.reset();
                             stateTureta = 1;
                         }
@@ -326,7 +295,7 @@ public class TeleOpRed extends LinearOpMode {
                     break;
 
                 case 1:
-                    if (statetureta.milliseconds() > 400){
+                    if (statetureta.milliseconds() > TURRET_STATE_DEBOUNCE_MS){
                         LLResult result = limelight.limelight.getLatestResult();
                         if ((result == null || !result.isValid()) && !TuretaToZero) {
                             turret.setPower(0);
@@ -341,7 +310,7 @@ public class TeleOpRed extends LinearOpMode {
                         LLResultTypes.FiducialResult targetTag = null;
                         if (tags != null) {
                             for (LLResultTypes.FiducialResult t : tags) {
-                                if (t.getFiducialId() == 24) {
+                                if (t.getFiducialId() == ID_RT) {
                                     targetTag = t;
                                     break;
                                 }
@@ -354,10 +323,10 @@ public class TeleOpRed extends LinearOpMode {
                         if (targetTag != null) {
                             tx = targetTag.getTargetXDegrees() + txOffset;
                         }
-                        if (Math.abs(tx) < 1.0 && !TuretaToZero) {
+                        if (Math.abs(tx) < TURRET_TX_DEADZONE_DEG && !TuretaToZero) {
                             turret.setPower(0);
                         }
-                        double power = tx * 0.03;
+                        double power = tx * TURRET_TX_POWER_GAIN;
                         int pos = turret.getCurrentPosition();
                         if ((pos >= MAX_TICKS && power > 0) || (pos <= MIN_TICKS && power < 0)) {
                             power = 0;
@@ -372,7 +341,7 @@ public class TeleOpRed extends LinearOpMode {
                             power = clamp(power, -1, 1);
                             turret.setPower(power);
                         } else {
-                            power = Math.max(-0.6, Math.min(0.6, power));
+                            power = Math.max(-TURRET_POWER_CLAMP, Math.min(TURRET_POWER_CLAMP, power));
                             TuretaToZero = false;
                         }
                         if (gamepad1.share) {
@@ -429,7 +398,7 @@ public class TeleOpRed extends LinearOpMode {
 
             }
             if (gamepad1.dpad_down){
-                ascent.Ridicare(DR,SR);
+                ascent.Ridicare(ASCENT_POWER_D, ASCENT_POWER_S);
             }
 
             else {
@@ -448,25 +417,24 @@ public class TeleOpRed extends LinearOpMode {
             }
 
 //Unghi outtake
-
-            if (dist < 1.2){
-                outtake.Angle.setPosition(0.5);
-                getTargetRPM = 3200;
-            }else if (dist > 1.2 && dist <1.9){
-                outtake.Angle.setPosition(0.67);
-                getTargetRPM = 3400;
-            }else if (dist > 1.9 && dist< 3){
-                outtake.Angle.setPosition(0.7);
-                getTargetRPM = 3500;
-            }else if (dist > 3 && dist< 4.5){
-                outtake.Angle.setPosition(0.7);
-                getTargetRPM = 3700;
-            }else if (dist > 4.5 && dist< 8){
-                outtake.Angle.setPosition(0.84);
-                getTargetRPM = 4000;
-            }else if (dist > 8){
-                outtake.Angle.setPosition(0.84);
-                getTargetRPM = 4800;
+            if (dist < DIST_ZONE_NEAR){
+                outtake.Angle.setPosition(OUTTAKE_ANGLE_NEAR);
+                getTargetRPM = LAUNCHER_RPM_NEAR;
+            } else if (dist > DIST_ZONE_NEAR && dist < DIST_ZONE_CLOSE){
+                outtake.Angle.setPosition(OUTTAKE_ANGLE_CLOSE);
+                getTargetRPM = LAUNCHER_RPM_CLOSE;
+            } else if (dist > DIST_ZONE_CLOSE && dist < DIST_ZONE_MID){
+                outtake.Angle.setPosition(OUTTAKE_ANGLE_MID);
+                getTargetRPM = LAUNCHER_RPM_MID;
+            } else if (dist > DIST_ZONE_MID && dist < DIST_ZONE_MID_FAR){
+                outtake.Angle.setPosition(OUTTAKE_ANGLE_MID);
+                getTargetRPM = LAUNCHER_RPM_MID_FAR;
+            } else if (dist > DIST_ZONE_MID_FAR && dist < DIST_ZONE_FAR){
+                outtake.Angle.setPosition(OUTTAKE_ANGLE_FAR);
+                getTargetRPM = LAUNCHER_RPM_FAR;
+            } else if (dist > DIST_ZONE_FAR){
+                outtake.Angle.setPosition(OUTTAKE_ANGLE_FAR);
+                getTargetRPM = LAUNCHER_RPM_MAX;
             }
 
 
@@ -544,14 +512,14 @@ public class TeleOpRed extends LinearOpMode {
                     break;
                 case 1:
 //                    if (throwTimer.milliseconds() > 1200) {
-                    if (measuredRPM < (targetRPM + 100) && measuredRPM > (targetRPM -100) && throwTimer.milliseconds() > 400) {
+                    if (measuredRPM < (targetRPM + LAUNCHER_RPM_TOLERANCE) && measuredRPM > (targetRPM - LAUNCHER_RPM_TOLERANCE) && throwTimer.milliseconds() > THROW_RPM_WAIT_MS) {
                         indexer.Push();
                         throwTimer.reset();
                         stateThrow = 2;
                     }
                     break;
                 case 2:
-                    if (throwTimer.milliseconds() > 200) {
+                    if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                         indexer.Down();
                         throwTimer.reset();
                         stateThrow = 3;
@@ -559,7 +527,7 @@ public class TeleOpRed extends LinearOpMode {
                     break;
                 // ----------------- A DOUA BILA -----------------
                 case 3:
-                    if (throwTimer.milliseconds() > 200) {
+                    if (throwTimer.milliseconds() > THROW_POSE_CHANGE_MS) {
                         if (!colectareSelectiva) {
                             indexer.OuttakePose2();
                             throwTimer.reset();
@@ -625,14 +593,14 @@ public class TeleOpRed extends LinearOpMode {
                     }
                     break;
                 case 4:
-                    if ((measuredRPM < (targetRPM + 100)) && measuredRPM > (targetRPM -100) && throwTimer.milliseconds() > 400) {
+                    if ((measuredRPM < (targetRPM + LAUNCHER_RPM_TOLERANCE)) && measuredRPM > (targetRPM - LAUNCHER_RPM_TOLERANCE) && throwTimer.milliseconds() > THROW_RPM_WAIT_MS) {
                         indexer.Push();
                         throwTimer.reset();
                         stateThrow = 5;
                     }
                     break;
                 case 5:
-                    if (throwTimer.milliseconds() > 200) {
+                    if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                         indexer.Down();
                         throwTimer.reset();
                         stateThrow = 6;
@@ -640,7 +608,7 @@ public class TeleOpRed extends LinearOpMode {
                     break;
                 // ----------------- A TREIA BILA -----------------
                 case 6:
-                    if (throwTimer.milliseconds() > 200) {
+                    if (throwTimer.milliseconds() > THROW_POSE_CHANGE_MS) {
                         if (!colectareSelectiva) {
                             indexer.OuttakePose3();
                             throwTimer.reset();
@@ -706,20 +674,20 @@ public class TeleOpRed extends LinearOpMode {
                     }
                     break;
                 case 7:
-                    if (measuredRPM < targetRPM + 100 && measuredRPM > targetRPM -100 && throwTimer.milliseconds() > 400) {
+                    if (measuredRPM < targetRPM + LAUNCHER_RPM_TOLERANCE && measuredRPM > targetRPM - LAUNCHER_RPM_TOLERANCE && throwTimer.milliseconds() > THROW_RPM_WAIT_MS) {
                         indexer.Push();
                         throwTimer.reset();
                         stateThrow = 8;
                     }
                     break;
                 case 8:
-                    if (throwTimer.milliseconds() > 200) {
+                    if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                         indexer.Down();
                         stateThrow = 9;
                     }
                     break;
                 case 9:
-                    if (throwTimer.milliseconds() > 400) {
+                    if (throwTimer.milliseconds() > THROW_RESET_DELAY_MS) {
                         if (colectareSelectiva) {
                             stateCollect = 96;
                         } else {
@@ -742,7 +710,7 @@ public class TeleOpRed extends LinearOpMode {
             switch (stateCollect) {
                 case 0: // PickPose1
                     indexer.PickPose1();
-                    if (distance <= 70) {
+                    if (distance <= COLLECT_DISTANCE_THRESHOLD_MM) {
                         indexer.PickPose2();
                         collecttimer.reset();
                         ballsRemoved = false;
@@ -751,7 +719,7 @@ public class TeleOpRed extends LinearOpMode {
                     break;
 
                 case 1:
-                    if (distance <= 70 && collecttimer.milliseconds() > 600) {
+                    if (distance <= COLLECT_DISTANCE_THRESHOLD_MM && collecttimer.milliseconds() > COLLECT_DELAY_POSE1_TO_2_MS) {
                         indexer.PickPose3();
                         collecttimer.reset();
                         stateCollect = 2;
@@ -759,20 +727,20 @@ public class TeleOpRed extends LinearOpMode {
                     break;
 
                 case 2: // PickPose3
-                    if (distance <= 70 && collecttimer.milliseconds() > 300) {
+                    if (distance <= COLLECT_DISTANCE_THRESHOLD_MM && collecttimer.milliseconds() > COLLECT_DELAY_POSE2_TO_3_MS) {
                         collecttimer.reset();
                         indexer.OuttakePose1();
                         targetRPM =getTargetRPM;
                         allBallsIn = true;
                         stopIntake = true;
-                        gamepad1.rumble(300);
+                        gamepad1.rumble(RUMBLE_COLLECT_COMPLETE_MS);
                         stateCollect = 3;
 
                     }
                     break;
 
                 case 3: // PickPose3
-                    if (collecttimer.milliseconds() > 300) {
+                    if (collecttimer.milliseconds() > COLLECT_DELAY_BEFORE_TAKEOUT_MS) {
                         collecttimer.reset();
                         TakeOUT = true;
                         stateCollect = 4;
@@ -793,7 +761,7 @@ public class TeleOpRed extends LinearOpMode {
                     indexer.KeepInside();
                     indexer.PickPose1();
                     detectedColor1 = colorSensorIndexer.getDetectedColor();
-                    if (distance <= 70) {
+                    if (distance <= COLLECT_DISTANCE_THRESHOLD_MM) {
                         if (detectedColor1 == ColorSensorIndexer.DetectedColor.PURPLE) {
                             purplecount++;
                             indexer.PickPose2();
@@ -816,7 +784,7 @@ public class TeleOpRed extends LinearOpMode {
 
                 case 97: // PickPose2
                     detectedColor2 = colorSensorIndexer.getDetectedColor();
-                    if (distance <= 70 && collecttimer.milliseconds() > 600) {
+                    if (distance <= COLLECT_DISTANCE_THRESHOLD_MM && collecttimer.milliseconds() > COLLECT_DELAY_POSE1_TO_2_MS) {
                         if (detectedColor2 == ColorSensorIndexer.DetectedColor.PURPLE) {
                             purplecount++;
                             collecttimer.reset();
@@ -840,7 +808,7 @@ public class TeleOpRed extends LinearOpMode {
 
                 case 98: // PickPose3
                     detectedColor3 = colorSensorIndexer.getDetectedColor();
-                    if (distance <= 70 && collecttimer.milliseconds() > 300) {
+                    if (distance <= COLLECT_DISTANCE_THRESHOLD_MM && collecttimer.milliseconds() > COLLECT_DELAY_POSE2_TO_3_MS) {
                         if (detectedColor3 == ColorSensorIndexer.DetectedColor.PURPLE) {
                             purplecount++;
                             collecttimer.reset();
@@ -913,7 +881,7 @@ public class TeleOpRed extends LinearOpMode {
                             }
                             stopIntake = true;
                             allBallsIn = true;
-                            gamepad1.rumble(200);
+                            gamepad1.rumble(RUMBLE_SELECTIVE_COMPLETE_MS);
                             stateCollect = 99;
                         }
                     }
@@ -928,9 +896,9 @@ public class TeleOpRed extends LinearOpMode {
                     break;
             }
 
-            targetRPM = Math.max(0, Math.min(12000, targetRPM));
+            targetRPM = Math.max(0, Math.min(LAUNCHER_MAX_RPM, targetRPM));
 
-            if (targetRPM <= 50) {
+            if (targetRPM <= LAUNCHER_MIN_ACTIVE_RPM) {
                 launcher.setPower(0);
                 integral = 0;
                 previousError = 0;
@@ -939,30 +907,30 @@ public class TeleOpRed extends LinearOpMode {
             }
 
             double currentTime = timer.seconds();
-            if (currentTime >= dt) {
+            if (currentTime >= LAUNCHER_DT) {
 
                 int currentEncoder = launcher.getCurrentPosition();
                 int delta = currentEncoder - lastEncoder;
 
-                measuredRPM = (delta * 60.0) / (CPR * currentTime);
+                measuredRPM = (delta * 60.0) / (LAUNCHER_CPR * currentTime);
 
                 double error = targetRPM - measuredRPM;
 
-                // ✅ DEADZONE ANTI TREPIDAT
-                if (Math.abs(error) < 40) error = 0;
+                // Deadzone anti-trepidation
+                if (Math.abs(error) < LAUNCHER_ERROR_DEADZONE) error = 0;
 
-                // ✅ INTEGRAL CU LIMITARE (ANTI WIND-UP)
+                // Integral with anti-windup
                 integral += error * currentTime;
-                integral = Math.max(-5000, Math.min(5000, integral));
+                integral = Math.max(-LAUNCHER_INTEGRAL_LIMIT, Math.min(LAUNCHER_INTEGRAL_LIMIT, integral));
 
                 // ✅ DERIVATĂ FILTRATĂ
-                double derivative = (error - previousError) / Math.max(currentTime, 0.01);
+                double derivative = (error - previousError) / Math.max(currentTime, LAUNCHER_PID_DERIVATIVE_TIME_MIN);
 
                 double output =
-                        kP * error +
-                                kI * integral +
-                                kD * derivative +
-                                kF * targetRPM;
+                        LAUNCHER_KP * error +
+                                LAUNCHER_KI * integral +
+                                LAUNCHER_KD * derivative +
+                                LAUNCHER_KF * targetRPM;
 
                 output = Math.max(0.0, Math.min(1.0, output));
 
@@ -996,7 +964,7 @@ public class TeleOpRed extends LinearOpMode {
             } else if (TakePurpleBallOut.milliseconds() < 400 && !ridic) {
                 indexer.TakeOut();
                 purplecount = 2;
-            }else if ((stopIntake && collecttimer.milliseconds() > 700) || (ridic)) {
+            } else if ((stopIntake && collecttimer.milliseconds() > COLLECT_STOP_INTAKE_DELAY_MS) || (ridic)) {
                 indexer.Stop();
             } else if (!ridic){
                 indexer.Colect();
@@ -1011,11 +979,11 @@ public class TeleOpRed extends LinearOpMode {
 
 //Power Launcher
             if (gamepad1.dpad_right) {
-                txOffset += offsetStep;
+                txOffset += TURRET_OFFSET_STEP;
             }
 
             if (gamepad1.dpad_left) {
-                txOffset -= offsetStep;
+                txOffset -= TURRET_OFFSET_STEP;
             }
 
             telemetry.addData("Stare camera", limelight.limelight.isRunning() ? "Pornita" : "Oprita");
@@ -1044,10 +1012,10 @@ public class TeleOpRed extends LinearOpMode {
         double derivative = error - lastError;
         lastError = error;
 
-        return (P * error)
-                + (I * integralTurret)
-                + (D * derivative)
-                + (F * Math.signum(error));
+        return (TURRET_POS_P * error)
+                + (TURRET_POS_I * integralTurret)
+                + (TURRET_POS_D * derivative)
+                + (TURRET_POS_F * Math.signum(error));
     }
     private int wrapTicks(int ticks) {
         int range = MAX_TICKS * 2;

@@ -14,6 +14,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import static org.firstinspires.ftc.teamcode.Constants.*;
+
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Hardware.ColorSensorIndexer;
 import org.firstinspires.ftc.teamcode.Hardware.Indexer;
@@ -30,22 +32,15 @@ public class AutoRedSideTower extends OpMode {
     ElapsedTime throwTimer;
     ElapsedTime collecttimer;
 
-    //Set RPM Launcher
-    private static final double CPR = 18.666;
-    public static double kP = 0.003;
-    public static double kI = 0.000007;
-    public static double kD = 0.00007;
-    public static double kF = 0.0001468;
     private double integral = 0;
     private double previousError = 0;
 
     private ElapsedTime timer = new ElapsedTime();
     private ElapsedTime timerToSee = new ElapsedTime();
     double Time = 0;
-    private double dt = 0.02;
 
     private int lastEncoder = 0;
-    public static double targetRPM1 = 3500;
+    public static double targetRPM1 = AUTO_LAUNCHER_RPM_DEFAULT;
     public static double targetRPM = 0;
     double measuredRPM;
     public static double pidTargetRPM = 0;
@@ -54,13 +49,7 @@ public class AutoRedSideTower extends OpMode {
 
     //PIDF for turret
     private DcMotorEx turret;
-    public static final double TICKS_PER_DEGREE_Turret = 6.533;
-    public static final int MAX_TICKS = (int)(180 * TICKS_PER_DEGREE_Turret);
-
-    public static double P = 0.006;
-    public static double I = 0.0;
-    public static double D = 0;
-    public static double F = 0.1;
+    public static final int MAX_TICKS = (int)(180 * TURRET_TICKS_PER_DEGREE_LIMELIGHT);
     private double integralTurret = 0;
     private double lastError = 0;
     public static int targetPosition = 0;
@@ -89,7 +78,7 @@ public class AutoRedSideTower extends OpMode {
     private Follower follower;
     private Timer pathTimer, actionTimer, nextTask , opmodeTimer;
     String tag;
-    public double power = 0.8;
+    public double power = AUTO_TURRET_POWER;
 
     private int pathState;
     private final Pose startPose = new Pose(112, 134, Math.toRadians(90)); // Start Pose of our robot.
@@ -180,7 +169,7 @@ public class AutoRedSideTower extends OpMode {
                 setPathState(1);
                 break;
             case 1:
-                if (actionTimer.getElapsedTimeSeconds() > 0.05){
+                if (actionTimer.getElapsedTimeSeconds() > AUTO_TAG_DETECTION_DELAY_SEC){
                     tag = limelight.getAprilTag();
                     greenBallPickedAt = "PickPose1";
                     if (tag != null &&
@@ -190,7 +179,7 @@ public class AutoRedSideTower extends OpMode {
 //                        launcher.setPower(power);
                         targetPosition = 250;
                         actionTimer.resetTimer();
-                        outtake.Angle.setPosition(0.72);
+                        outtake.Angle.setPosition(AUTO_OUTTAKE_ANGLE_MID);
                         targetRPM = targetRPM1;
 
                         setPathState(2);
@@ -211,7 +200,7 @@ public class AutoRedSideTower extends OpMode {
 
             case 3:
                 if (stateThrow == 99) {
-                    follower.followPath(grabPickup1 , 0.7 , true);
+                    follower.followPath(grabPickup1 , AUTO_PATH_SPEED_MID , true);
                     indexer.Colect();
                     greenBallPickedAt = "PickPose3";
                     pathTimer.resetTimer();
@@ -220,7 +209,7 @@ public class AutoRedSideTower extends OpMode {
                 }
                 break;
             case 4:
-                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)){
+                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > AUTO_COLLECT_TIMEOUT_DRIVING_SEC)){
                     follower.followPath(scorePickup1);
                     limelight.limelight.stop();
                     targetRPM = targetRPM1;
@@ -247,12 +236,12 @@ public class AutoRedSideTower extends OpMode {
                 break;
             case 7:
                 if (!follower.isBusy()){
-                    follower.followPath(grabPickup2 , 0.7 , true);
+                    follower.followPath(grabPickup2 , AUTO_PATH_SPEED_MID , true);
                     setPathState(8);
                 }
                 break;
             case 8:
-                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)) {
+                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > AUTO_COLLECT_TIMEOUT_DRIVING_SEC)) {
                     follower.followPath(scorePickup2);
                     targetPosition = 530;
                     targetRPM = targetRPM1;
@@ -278,15 +267,15 @@ public class AutoRedSideTower extends OpMode {
                 break;
             case 11:
                 if (!follower.isBusy()){
-                    follower.followPath(grabPickup3 , 0.7 , true);
+                    follower.followPath(grabPickup3 , AUTO_PATH_SPEED_MID , true);
                     setPathState(12);
                 }
                 break;
             case 12:
-                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > 1.5)) {
+                if (!follower.isBusy() && (stateCollect == 99 || pathTimer.getElapsedTimeSeconds() > AUTO_COLLECT_TIMEOUT_DRIVING_SEC)) {
                     follower.followPath(scorePickup3);
                     targetPosition = 100;
-                    targetRPM = 2800;
+                    targetRPM = AUTO_LAUNCHER_RPM_FAR;
 
                     setPathState(13);
                 }
@@ -370,10 +359,9 @@ public class AutoRedSideTower extends OpMode {
     @Override
     public void loop() {
 
-        targetRPM = Math.max(0, Math.min(12000, targetRPM));
+        targetRPM = Math.max(0, Math.min(LAUNCHER_MAX_RPM, targetRPM));
 
-        // ✅ STOP REAL LA 0 RPM
-        if (targetRPM <= 50) {
+        if (targetRPM <= LAUNCHER_MIN_ACTIVE_RPM) {
             launcher.setPower(0);
             integral = 0;
             previousError = 0;
@@ -382,30 +370,28 @@ public class AutoRedSideTower extends OpMode {
         }
 
         double currentTime = timer.seconds();
-        if (currentTime >= dt) {
+        if (currentTime >= LAUNCHER_DT) {
 
             int currentEncoder = launcher.getCurrentPosition();
             int delta = currentEncoder - lastEncoder;
 
-            measuredRPM = (delta * 60.0) / (CPR * currentTime);
+            measuredRPM = (delta * 60.0) / (LAUNCHER_CPR * currentTime);
 
             double error = targetRPM - measuredRPM;
 
-            // ✅ DEADZONE ANTI TREPIDAT
-            if (Math.abs(error) < 40) error = 0;
+            if (Math.abs(error) < LAUNCHER_ERROR_DEADZONE) error = 0;
 
-            // ✅ INTEGRAL CU LIMITARE (ANTI WIND-UP)
             integral += error * currentTime;
-            integral = Math.max(-5000, Math.min(5000, integral));
+            integral = Math.max(-LAUNCHER_INTEGRAL_LIMIT, Math.min(LAUNCHER_INTEGRAL_LIMIT, integral));
 
             // ✅ DERIVATĂ FILTRATĂ
-            double derivative = (error - previousError) / Math.max(currentTime, 0.01);
+            double derivative = (error - previousError) / Math.max(currentTime, LAUNCHER_PID_DERIVATIVE_TIME_MIN);
 
             double output =
-                    kP * error +
-                            kI * integral +
-                            kD * derivative +
-                            kF * targetRPM;
+                    LAUNCHER_KP * error +
+                            LAUNCHER_KI * integral +
+                            LAUNCHER_KD * derivative +
+                            LAUNCHER_KF * targetRPM;
 
             output = Math.max(0.0, Math.min(1.0, output));
 
@@ -486,14 +472,14 @@ public class AutoRedSideTower extends OpMode {
                 break;
             case 1:
 //                    if (throwTimer.milliseconds() > 1200) {
-                if (measuredRPM < (targetRPM + 100) && measuredRPM > (targetRPM -100) && throwTimer.milliseconds() > 600) {
+                if (measuredRPM < (targetRPM + LAUNCHER_RPM_TOLERANCE) && measuredRPM > (targetRPM - LAUNCHER_RPM_TOLERANCE) && throwTimer.milliseconds() > AUTO_THROW_RPM_WAIT_MS_MID) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 2;
                 }
                 break;
             case 2:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                     indexer.Down();
                     throwTimer.reset();
                     stateThrow = 3;
@@ -501,7 +487,7 @@ public class AutoRedSideTower extends OpMode {
                 break;
             // ----------------- A DOUA BILA -----------------
             case 3:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
 
                     if (greenBallPickedAt.equals(pp1)) {
                         String caseUsed = detectedCase;
@@ -563,14 +549,14 @@ public class AutoRedSideTower extends OpMode {
                 }
                 break;
             case 4:
-                if ((measuredRPM < (targetRPM + 100)) && measuredRPM > (targetRPM -100) && throwTimer.milliseconds() > 500) {
+                if ((measuredRPM < (targetRPM + LAUNCHER_RPM_TOLERANCE)) && measuredRPM > (targetRPM - LAUNCHER_RPM_TOLERANCE) && throwTimer.milliseconds() > AUTO_THROW_RPM_WAIT_MS_ALT) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 5;
                 }
                 break;
             case 5:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                     indexer.Down();
                     throwTimer.reset();
                     stateThrow = 6;
@@ -578,7 +564,7 @@ public class AutoRedSideTower extends OpMode {
                 break;
             // ----------------- A TREIA BILA -----------------
             case 6:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
 
                     if (greenBallPickedAt.equals(pp1)) {
                         String caseUsed = detectedCase;
@@ -640,20 +626,20 @@ public class AutoRedSideTower extends OpMode {
                 }
                 break;
             case 7:
-                if (measuredRPM < targetRPM + 100 && measuredRPM > targetRPM -100 && throwTimer.milliseconds() > 500) {
+                if (measuredRPM < targetRPM + LAUNCHER_RPM_TOLERANCE && measuredRPM > targetRPM - LAUNCHER_RPM_TOLERANCE && throwTimer.milliseconds() > AUTO_THROW_RPM_WAIT_MS_ALT) {
                     indexer.Push();
                     throwTimer.reset();
                     stateThrow = 8;
                 }
                 break;
             case 8:
-                if (throwTimer.milliseconds() > 200) {
+                if (throwTimer.milliseconds() > THROW_PUSH_TO_DOWN_MS) {
                     indexer.Down();
                     stateThrow = 9;
                 }
                 break;
             case 9:
-                if (throwTimer.milliseconds() > 400) {
+                if (throwTimer.milliseconds() > THROW_RESET_DELAY_MS) {
                     stateThrow = 99;
                     targetRPM = 0;
                     indexer.Down();
@@ -665,7 +651,7 @@ public class AutoRedSideTower extends OpMode {
         switch (stateCollect) {
             case 0: // PickPose1
                 indexer.PickPose1();
-                if (distance <= 70) {
+                if (distance <= COLLECT_DISTANCE_THRESHOLD_MM) {
                     indexer.PickPose2();
                     collecttimer.reset();
                     stateCollect = 1;
@@ -675,7 +661,7 @@ public class AutoRedSideTower extends OpMode {
                 break;
 
             case 1:
-                if (collecttimer.milliseconds() > 500) {
+                if (collecttimer.milliseconds() > AUTO_COLLECT_DELAY_POSE1_TO_2_MS_FAST) {
                     indexer.PickPose3();
                     collecttimer.reset();
                     stateCollect = 2;
@@ -683,7 +669,7 @@ public class AutoRedSideTower extends OpMode {
                 break;
 
             case 2: // PickPose3
-                if (distance <= 70 && collecttimer.milliseconds() > 300) {
+                if (distance <= COLLECT_DISTANCE_THRESHOLD_MM && collecttimer.milliseconds() > COLLECT_DELAY_POSE2_TO_3_MS) {
                     collecttimer.reset();
                     if (greenBallPickedAt.equals(pp1)) {
                         String caseUsed = detectedCase;
@@ -792,7 +778,7 @@ public class AutoRedSideTower extends OpMode {
         colorSensorIndexer.initcolorsensor(hardwareMap);
         distanceSensor = hardwareMap.get(DistanceSensor.class, "SenzorIntakeCH");
         indexer.PickPose1();
-        outtake.Angle.setPosition(0.53);
+        outtake.Angle.setPosition(AUTO_OUTTAKE_ANGLE_TOWER);
         indexer.Down();
 
         pathTimer = new Timer();
@@ -839,10 +825,10 @@ public class AutoRedSideTower extends OpMode {
         double derivative = error - lastError;
         lastError = error;
 
-        return (P * error)
-                + (I * integralTurret)
-                + (D * derivative)
-                + (F * Math.signum(error));
+        return (TURRET_POS_P * error)
+                + (TURRET_POS_I * integralTurret)
+                + (TURRET_POS_D * derivative)
+                + (TURRET_POS_F * Math.signum(error));
     }
     private int wrapTicks(int ticks) {
         int range = MAX_TICKS * 2;

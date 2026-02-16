@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
+import static org.firstinspires.ftc.teamcode.Constants.*;
+
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -28,10 +30,10 @@ public class Ascent {
         RidicareSS.setPower(S);
     }
     public void Prins(){
-        Prindere.setPosition(0);
+        Prindere.setPosition(ASCENT_GRIP_POSITION);
     }
     public void Eliberat(){
-        Prindere.setPosition(0.4);
+        Prindere.setPosition(ASCENT_RELEASE_POSITION);
     }
 }
 

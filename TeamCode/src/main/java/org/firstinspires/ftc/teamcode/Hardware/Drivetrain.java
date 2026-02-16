@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
+import static org.firstinspires.ftc.teamcode.Constants.DRIVE_POWER_SCALE;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -34,10 +36,10 @@ public class Drivetrain {
     }
     public void drive(double forward , double strafe  , double turn ){
         double denominator = JavaUtil.maxOfList(JavaUtil.createListWith(1, Math.abs(forward) + Math.abs(strafe) + Math.abs(turn)));
-        FrontLeft.setPower((forward + strafe + turn) / denominator * 2);
-        RearLeft.setPower((forward - (strafe - turn)) / denominator * 2);
-        FrontRight.setPower((forward - (strafe + turn)) / denominator * 2);
-        RearRight.setPower((forward + (strafe - turn)) / denominator * 2);
+        FrontLeft.setPower((forward + strafe + turn) / denominator * DRIVE_POWER_SCALE);
+        RearLeft.setPower((forward - (strafe - turn)) / denominator * DRIVE_POWER_SCALE);
+        FrontRight.setPower((forward - (strafe + turn)) / denominator * DRIVE_POWER_SCALE);
+        RearRight.setPower((forward + (strafe - turn)) / denominator * DRIVE_POWER_SCALE);
 
     }
     public void activeBrake() {

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
+import static org.firstinspires.ftc.teamcode.Constants.*;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
@@ -20,10 +21,10 @@ public class ColorSensorIndexer {
     public Telemetry telemetry;
     private DetectedColor lastColor = DetectedColor.UNKNOWN;
     private int stableCount = 0;
-    private static final int REQUIRED_STABLE_READS = 3;
+    private static final int REQUIRED_STABLE_READS = COLOR_SENSOR_REQUIRED_STABLE_READS;
     public void initcolorsensor(HardwareMap hwMap) {
         colorSensor = hwMap.get(NormalizedColorSensor.class, "SenzorIntakeCH");
-        colorSensor.setGain(100);
+        colorSensor.setGain(COLOR_SENSOR_GAIN);
     }
 //    public DetectedColor getDetectedColor() {
 //        DetectedColor current = detectRawColor();
@@ -101,10 +102,11 @@ public class ColorSensorIndexer {
         normgreen = colors.green / colors.alpha;
         normblue = colors.blue / colors.alpha;
 
-        if( normred > 1.75 && normgreen > 2.65 && normblue > 1.76 && normred < 2.08 && normgreen < 3.01 && normblue < 3.01 ){
+        if (normred > PURPLE_RED_MIN && normgreen > PURPLE_GREEN_MIN && normblue > PURPLE_BLUE_MIN
+                && normred < PURPLE_RED_MAX && normgreen < PURPLE_GREEN_MAX && normblue < PURPLE_BLUE_MAX) {
             return DetectedColor.PURPLE;
-
-        } else if (normred > 1 && normgreen > 3.01 && normblue > 2.4&& normred < 1.73 && normgreen < 3.8 && normblue < 2.98 ){
+        } else if (normred > GREEN_RED_MIN && normgreen > GREEN_GREEN_MIN && normblue > GREEN_BLUE_MIN
+                && normred < GREEN_RED_MAX && normgreen < GREEN_GREEN_MAX && normblue < GREEN_BLUE_MAX) {
             return DetectedColor.GREEN;
         }else {
             return DetectedColor.UNKNOWN;
