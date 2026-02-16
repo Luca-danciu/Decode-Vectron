@@ -1,5 +1,15 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
+import static org.firstinspires.ftc.teamcode.Constants.APRILTAG_PHYSICAL_SIZE_METERS;
+import static org.firstinspires.ftc.teamcode.Constants.ID_BT;
+import static org.firstinspires.ftc.teamcode.Constants.ID_GPP;
+import static org.firstinspires.ftc.teamcode.Constants.ID_PGP;
+import static org.firstinspires.ftc.teamcode.Constants.ID_PPG;
+import static org.firstinspires.ftc.teamcode.Constants.ID_RT;
+import static org.firstinspires.ftc.teamcode.Constants.WEBCAM_RANGE_MODIFIER;
+import static org.firstinspires.ftc.teamcode.Constants.WEBCAM_SIZE;
+
+
 import android.util.Size;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -17,23 +27,17 @@ public class WebcamTureta {
     private VisionPortal visionPortal;
     private AprilTagProcessor aprilTag;
 
-    private static final int ID_PGP = 22;
-    private static final int ID_PPG = 23;
-    private static final int ID_GPP = 21;
-    private static final int ID_BT = 20;
-    private static final int ID_RT = 24;
-
 
     private String lastTag = "Niciun tag";
     private double lastDistance = -1;
 
     public void initwebcam(HardwareMap hardwareMap) {
         AprilTagLibrary myLibrary = new AprilTagLibrary.Builder()
-                .addTag(ID_PGP, "PGP", 0.16, DistanceUnit.METER)
-                .addTag(ID_PPG, "PPG", 0.16, DistanceUnit.METER)
-                .addTag(ID_GPP, "GPP", 0.16, DistanceUnit.METER)
-                .addTag(ID_RT, "RT", 0.16, DistanceUnit.METER)
-                .addTag(ID_BT, "BT", 0.16, DistanceUnit.METER)
+                .addTag(ID_PGP, "PGP", APRILTAG_PHYSICAL_SIZE_METERS, DistanceUnit.METER)
+                .addTag(ID_PPG, "PPG", APRILTAG_PHYSICAL_SIZE_METERS, DistanceUnit.METER)
+                .addTag(ID_GPP, "GPP", APRILTAG_PHYSICAL_SIZE_METERS, DistanceUnit.METER)
+                .addTag(ID_RT, "RT", APRILTAG_PHYSICAL_SIZE_METERS, DistanceUnit.METER)
+                .addTag(ID_BT, "BT", APRILTAG_PHYSICAL_SIZE_METERS, DistanceUnit.METER)
 
                 .build();
 
@@ -47,7 +51,7 @@ public class WebcamTureta {
                 .addProcessor(aprilTag)
                 .setCamera(hardwareMap.get(WebcamName.class, "WebcamTureta"))
                 .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
-                .setCameraResolution(new Size(640, 480))
+                .setCameraResolution(WEBCAM_SIZE)
                 .build();
     }
 
@@ -60,11 +64,11 @@ public class WebcamTureta {
         for (AprilTagDetection d : detections) {
             if (d.ftcPose == null) continue;
 //  28.26
-            if (d.id == ID_PGP) { lastTag = "PGP"; lastDistance = d.ftcPose.range * 0.030099; break; }
-            if (d.id == ID_PPG) { lastTag = "PPG"; lastDistance = d.ftcPose.range * 0.030099; break; }
-            if (d.id == ID_GPP) { lastTag = "GPP"; lastDistance = d.ftcPose.range * 0.030099; break; }
-            if (d.id == ID_BT) { lastTag = "Blue Tower"; lastDistance = d.ftcPose.range * 0.030099; break; }
-            if (d.id == ID_RT) { lastTag = "Red Tower"; lastDistance = d.ftcPose.range * 0.030099; break; }
+            if (d.id == ID_PGP) { lastTag = "PGP"; lastDistance = d.ftcPose.range * WEBCAM_RANGE_MODIFIER; break; }
+            if (d.id == ID_PPG) { lastTag = "PPG"; lastDistance = d.ftcPose.range * WEBCAM_RANGE_MODIFIER; break; }
+            if (d.id == ID_GPP) { lastTag = "GPP"; lastDistance = d.ftcPose.range * WEBCAM_RANGE_MODIFIER; break; }
+            if (d.id == ID_BT) { lastTag = "Blue Tower"; lastDistance = d.ftcPose.range * WEBCAM_RANGE_MODIFIER; break; }
+            if (d.id == ID_RT) { lastTag = "Red Tower"; lastDistance = d.ftcPose.range * WEBCAM_RANGE_MODIFIER; break; }
         }
 
         return lastTag;

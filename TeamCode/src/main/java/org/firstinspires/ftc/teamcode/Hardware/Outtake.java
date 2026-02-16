@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
+import static org.firstinspires.ftc.teamcode.Constants.*;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -32,17 +34,17 @@ public class Outtake {
 //
 //    }
     public void Charge(){
-        Launcher.setPower(-0.8);
+        Launcher.setPower(LAUNCHER_CHARGE_POWER);
     }
     public void StopLauncher(){
         Launcher.setPower(0);
     }
 
     public void AngleMax(){
-        Angle.setPosition(0.83);
+        Angle.setPosition(OUTTAKE_ANGLE_MAX);
     }
     public void AngleMin(){
-        Angle.setPosition(0.46);
+        Angle.setPosition(OUTTAKE_ANGLE_MIN);
     }
 
 
