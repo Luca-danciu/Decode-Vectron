@@ -1,7 +1,12 @@
 package org.firstinspires.ftc.teamcode.OpModes.Teleops;
 
-import static org.firstinspires.ftc.teamcode.Constants.*;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.*;
 
+import com.bylazar.field.FieldManager;
+import com.bylazar.field.FieldPresets;
+import com.bylazar.field.PanelsField;
+import com.bylazar.field.Style;
+import com.bylazar.telemetry.PanelsTelemetry;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
@@ -54,6 +59,7 @@ public abstract class BaseTeleOp extends LinearOpMode {
 
     protected Follower follower;
     private Supplier<PathChain> parcare;
+    FieldManager panelsField = PanelsField.INSTANCE.getField();
 
     protected boolean pathFinished = false;
     protected boolean automatedDrive = false;
@@ -88,6 +94,7 @@ public abstract class BaseTeleOp extends LinearOpMode {
     protected final ElapsedTime takeGreenBallOut = new ElapsedTime();
     protected final ElapsedTime takePurpleBallOut = new ElapsedTime();
     protected boolean ridic = false;
+    protected int lastCollectState = 0;
 
     // --- BNG config (overridable by subclasses) ---
     protected int towerX;
@@ -148,6 +155,9 @@ public abstract class BaseTeleOp extends LinearOpMode {
         follower = Constants.createFollower(hardwareMap);
         follower.setPose(getStartPose());
 
+        // Panels Init
+        panelsField.setOffsets(FieldPresets.INSTANCE.getPEDRO_PATHING());
+
         parcare = () -> follower.pathBuilder()
                 .addPath(new Path(new BezierLine(follower::getPose, getParkPose())))
                 .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(
@@ -189,12 +199,17 @@ public abstract class BaseTeleOp extends LinearOpMode {
 
     // ==================== Localization & Drive ====================
 
+    /** Odometry pose (wheel encoder) and Limelight pose (AprilTag), populated each updateLocalization(). */
+    protected Pose lastOdometryPose;
+    protected Pose lastLimelightPose;
+
     protected void updateLocalization() {
         follower.update();
-        Pose aprilTagPose = limelight.getFieldPoseFromAprilTag();
-        if (aprilTagPose != null) {
-            follower.setPose(aprilTagPose);
-        }
+        lastOdometryPose = follower.getPose();
+        lastLimelightPose = limelight.getFieldPoseFromAprilTag(follower.getPose());
+        // if (lastLimelightPose != null) {
+        //     follower.setPose(lastLimelightPose);
+        // }
     }
 
     protected void handleDriveAndPark() {
@@ -255,6 +270,25 @@ public abstract class BaseTeleOp extends LinearOpMode {
             launcher.setVelocity(targetVelocity);
 
             updateLocalization();
+
+
+
+            PanelsTelemetry.INSTANCE.getTelemetry().addData("last odo pose", lastOdometryPose != null ? lastOdometryPose : "");
+            PanelsTelemetry.INSTANCE.getTelemetry().addData("last lime pose", lastLimelightPose != null ? lastLimelightPose : "");
+            PanelsTelemetry.INSTANCE.getTelemetry().addData("lime debug", limelight.poseDebugReason + " tags=" + limelight.poseDebugTagsSeen);
+            PanelsTelemetry.INSTANCE.getTelemetry().update();
+
+
+            // Draw circles: blue = odometry pose, red = Limelight/AprilTag pose
+            panelsField.setStyle(new Style("#3F51B5", "#3F51B5", 0.75));
+            panelsField.moveCursor(follower.getPose().getX(), follower.getPose().getY());
+            panelsField.circle(10);
+            if (lastLimelightPose != null) {
+                panelsField.setStyle(new Style("#E53935", "#E53935", 0.75));
+                panelsField.moveCursor(lastLimelightPose.getX(), lastLimelightPose.getY());
+                panelsField.circle(10);
+            }
+            panelsField.update();
 
             Pose circlePose = getCircleOverridePose();
             if (circlePose != null && gamepad1.circle) {
@@ -348,7 +382,9 @@ public abstract class BaseTeleOp extends LinearOpMode {
             }
 
             stateThrow = runThrowStateMachine(stateThrow, throwTimer);
+            beforeCollectCycle();
             stateCollect = runCollectStateMachine(stateCollect, collecttimer);
+            lastCollectState = stateCollect;
 
             handleIntake(collecttimer);
             if (gamepad1.options) {
@@ -406,7 +442,8 @@ public abstract class BaseTeleOp extends LinearOpMode {
                 double powerT = TURRET_KP * error + TURRET_KD * (error - lastErrorT);
                 lastErrorT = error;
                 powerT = Math.max(-1, Math.min(1, powerT));
-                turret.setPower(powerT);
+                //TODO: revert
+//                turret.setPower(powerT);
                 if (gamepad1.share && statetureta.milliseconds() > TURRET_STATE_DEBOUNCE_MS) {
                     statetureta.reset();
                     return 1;
@@ -452,7 +489,8 @@ public abstract class BaseTeleOp extends LinearOpMode {
                                         power = Math.max(-TURRET_POWER_CLAMP, Math.min(TURRET_POWER_CLAMP, power));
                                         turetaToZero = false;
                                     }
-                                    turret.setPower(power);
+                                    //TODO: revert
+//                                    turret.setPower(power);
                                 }
                             }
                         }
@@ -540,6 +578,11 @@ public abstract class BaseTeleOp extends LinearOpMode {
         }
         return stateThrow;
     }
+
+    /**
+     * Called before runCollectStateMachine each cycle. Override to update preset/detected case (e.g. TeleOpSortare).
+     */
+    protected void beforeCollectCycle() {}
 
     protected int runCollectStateMachine(int stateCollect, ElapsedTime collecttimer) {
         switch (stateCollect) {

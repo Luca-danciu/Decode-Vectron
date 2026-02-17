@@ -1,16 +1,15 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
-import static org.firstinspires.ftc.teamcode.Constants.APRILTAG_PHYSICAL_SIZE_METERS;
-import static org.firstinspires.ftc.teamcode.Constants.ID_BT;
-import static org.firstinspires.ftc.teamcode.Constants.ID_GPP;
-import static org.firstinspires.ftc.teamcode.Constants.ID_PGP;
-import static org.firstinspires.ftc.teamcode.Constants.ID_PPG;
-import static org.firstinspires.ftc.teamcode.Constants.ID_RT;
-import static org.firstinspires.ftc.teamcode.Constants.WEBCAM_RANGE_MODIFIER;
-import static org.firstinspires.ftc.teamcode.Constants.WEBCAM_SIZE;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.APRILTAG_PHYSICAL_SIZE_METERS;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.ID_BT;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.ID_GPP;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.ID_PGP;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.ID_PPG;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.ID_RT;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.WEBCAM_RANGE_MODIFIER;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.WEBCAM_SIZE;
 
 
-import android.util.Size;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;

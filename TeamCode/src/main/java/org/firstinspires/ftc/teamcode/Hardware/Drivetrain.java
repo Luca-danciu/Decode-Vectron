@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
-import static org.firstinspires.ftc.teamcode.Constants.DRIVE_POWER_SCALE;
+import static org.firstinspires.ftc.teamcode.OpmodesConstants.DRIVE_POWER_SCALE;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
