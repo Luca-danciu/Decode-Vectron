@@ -24,6 +24,7 @@ public class Indexer {
         ridicatoruDeBilioasa = hardwareMap.get(DcMotor.class, "Totr");
 
         Intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        ridicatoruDeBilioasa.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
     }
     public void KeepInside(){
@@ -73,11 +74,14 @@ public class Indexer {
     public void Push(){
         Banana.setPosition(INDEXER_PUSH_POSITION);
     }
-    public void PushBlue(){
-        Banana.setPosition(INDEXER_PUSH_BLUE_POSITION);
-    }
     public void Down(){
         Banana.setPosition(INDEXER_DOWN_POSITION);
+    }
+    public void PullUp(){
+        ridicatoruDeBilioasa.setPower(RIDICATOR_PULL_UP);
+    }
+    public void StopPullUp(){
+        ridicatoruDeBilioasa.setPower(RIDICATOR_STOP);
     }
 
 }

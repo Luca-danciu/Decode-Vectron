@@ -113,7 +113,7 @@ public final class Constants {
     /** BNG Blue variant tower X coordinate (field inches). */
     public static final int BNG_BLUE_TOWER_X = 12;
     /** BNG Blue variant tower Y coordinate (field inches). */
-    public static final int BNG_BLUE_TOWER_Y = 138;
+    public static final int BNG_BLUE_TOWER_Y = 133;
 
     // =========================================================================
     // TURRET
@@ -299,6 +299,11 @@ public final class Constants {
     public static final double INTAKE_POWER_TAKE_OUT = 1.0;
     /** Intake motor power for partial eject (e.g. one ball at a time). */
     public static final double INTAKE_POWER_TAKE_OUT_BIT = 0.5;
+
+    public static final double RIDICATOR_PULL_UP = 1.0;
+    /** Ridicator motor power for ejecting balls (full forward). */
+    public static final double RIDICATOR_STOP = 0;
+    /** Ridicator motor power for stopping ejecting balls . */
 
     /** Indexer servo position for first pick slot (lowest position). */
     public static final double INDEXER_PICK_POSE_1 = 0.025;
