@@ -9,6 +9,7 @@ import static org.firstinspires.ftc.teamcode.Constants.LIMELIGHT_APRILTAG_PIPELI
 import static org.firstinspires.ftc.teamcode.Constants.LIMELIGHT_DISTANCE_DIVISOR;
 import static org.firstinspires.ftc.teamcode.Constants.LIMELIGHT_DISTANCE_SCALE;
 
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -84,5 +85,33 @@ public class Limelight {
         }
         return distance / LIMELIGHT_DISTANCE_DIVISOR;
 
+    }
+
+    /**
+     * Returns the robot's field pose from AprilTag vision (MegaTag2) when a valid
+     * tag is detected. Used to correct odometry drift during TeleOp.
+     *
+     * @return Field pose (x, y in inches; heading in radians), or null if no valid tag seen
+     */
+    public Pose getFieldPoseFromAprilTag() {
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
+
+        LLResult llResult = limelight.getLatestResult();
+        if (llResult == null || !llResult.isValid()) {
+            return null;
+        }
+
+        Pose3D botPose = llResult.getBotpose_MT2();
+        if (botPose == null) {
+            return null;
+        }
+
+        // Limelight returns position in meters; convert to inches to match odometry/field coords
+        double xInches = botPose.getPosition().x * 39.3701;
+        double yInches = botPose.getPosition().y * 39.3701;
+        double headingRad = botPose.getOrientation().getYaw(AngleUnit.RADIANS);
+
+        return new Pose(xInches, yInches, headingRad);
     }
 }
